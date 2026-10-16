@@ -4,12 +4,18 @@ import { Vector3 } from 'three';
 import { CITIES } from '../../data/nodes';
 import { globeLabels, type GlobeLabel } from '../../lib/describe';
 import { toVector } from '../../lib/globe';
+import { streamGlobeLabels, streamRoutes } from '../../lib/streamGlobe';
 import { useSim } from '../../store';
 
-/** Ids on the current route; the set only changes when the route does. */
+/** Ids on the current route (Streaming: both paths through the CDN edge); changes only with the route or mode. */
 export function useOnRoute() {
   const route = useSim((s) => s.route);
-  return useMemo(() => new Set(route.hops), [route]);
+  const stream = useSim((s) => s.mode === 'stream');
+  return useMemo(() => {
+    if (!stream) return new Set(route.hops);
+    const r = streamRoutes(route.hops[0], route.hops.at(-1)!);
+    return new Set([...r.toEdge.hops, ...r.toViewer.hops]);
+  }, [route, stream]);
 }
 
 export type PlacedLabel = GlobeLabel & { position: Vector3 };
@@ -17,7 +23,11 @@ export type PlacedLabel = GlobeLabel & { position: Vector3 };
 /** Cities, plus the route's landing stations and cable names; recomputed only when the route changes. */
 export function useGlobeLabels(): PlacedLabel[] {
   const route = useSim((s) => s.route);
-  return useMemo(() => globeLabels(route).map((l) => ({ ...l, position: toVector(l.at, 1.004) })), [route]);
+  const stream = useSim((s) => s.mode === 'stream');
+  return useMemo(() => {
+    const labels = stream ? streamGlobeLabels(streamRoutes(route.hops[0], route.hops.at(-1)!)) : globeLabels(route);
+    return labels.map((l) => ({ ...l, position: toVector(l.at, 1.004) }));
+  }, [route, stream]);
 }
 
 const CITY_MARKERS = CITIES.map((c) => ({ id: c.id, position: toVector(c.at, 1.004) }));

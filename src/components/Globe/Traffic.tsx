@@ -23,11 +23,12 @@ const TRAIL_SEGMENTS = 8;
 const MAX_TRAIL_VERTS = (MAX_PACKETS + 1) * TRAIL_SEGMENTS * 2;
 const SURFACE = 1.004;
 
-const KIND_DOT = 0, KIND_RING = 1, KIND_LOSS = 2;
+/** Sprite kinds understood by SPRITE_FRAGMENT (shared with StreamTraffic). */
+export const KIND_DOT = 0, KIND_RING = 1, KIND_LOSS = 2;
 const rgb = (hex: string) => new Color(hex).toArray() as [number, number, number];
 const WHITE = rgb('#ffffff'), AMBER = rgb('#f5a524'), RED = rgb('#ef4444'), MAGENTA = rgb(TRANSIT);
 
-const vertex = /* glsl */ `
+export const SPRITE_VERTEX = /* glsl */ `
   attribute float aSize;
   attribute vec4 aColor;
   attribute float aKind;
@@ -47,7 +48,7 @@ const vertex = /* glsl */ `
 `;
 
 // One sprite shader for three marks: glowing dot (packet), expanding ring (pulse), ring + × (loss).
-const fragment = /* glsl */ `
+export const SPRITE_FRAGMENT = /* glsl */ `
   varying vec4 vColor;
   varying float vKind;
   varying float vPhase;
@@ -200,8 +201,8 @@ export function Traffic() {
       <points geometry={sprites} frustumCulled={false}>
         <shaderMaterial
           ref={material}
-          vertexShader={vertex}
-          fragmentShader={fragment}
+          vertexShader={SPRITE_VERTEX}
+          fragmentShader={SPRITE_FRAGMENT}
           uniforms={uniforms}
           transparent
           depthWrite={false}

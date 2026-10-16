@@ -131,7 +131,15 @@ Plano: [plan.md](plan.md). TDD em `src/sim/stream/`. Validação no browser só 
   - Testes: alternar o modo troca os grupos; escolher um perfil chama `setProfile` e zera `t`
   - Verificar: `npm test -- Dock`
   - Arquivos: `src/components/Dock/StreamControls.tsx`, `src/App.tsx`, `tests/Dock.test.tsx`
-- [ ] **T10.6 Globo: duas rotas, borda, rajadas e câmera**
+- [x] **T10.6 Globo: duas rotas, borda, rajadas e câmera** (2026-10-16)
+  - Feito:
+    - `lib/streamGlobe.ts` (puro, 9 testes): `streamRoutes` (origem → borda, borda → Kenji, memoizado), `streamFocus` (alvo da câmera), `burstMarks` (rajadas, perdas e reenvios), `streamPulse` e `streamGlobeLabels` (a cidade da borda vira "· CDN").
+    - `Globe/StreamRoute.tsx`: origem → borda branca tracejada, acesa em magenta durante o miss e o manifesto; borda → Kenji em magenta, com marching dots durante o download; a borda é um **quadrado**.
+    - `Globe/StreamTraffic.tsx`: rajada de 3–10 pontos pela vazão, ✕ vermelho na perda, ponto âmbar no reenvio, pulsos na origem (codificação) e em Kenji (segmento entregue).
+    - `Globe`, `Nodes`, `Landings` e `CameraRig` leem o modo.
+  - Mudança: **`points` com o shader de sprites do `Traffic`** (exportado como `SPRITE_VERTEX`/`SPRITE_FRAGMENT`), não `InstancedMesh`. Continua sendo uma draw call, com o mesmo visual dos pacotes da Transferência (núcleo branco, anel de perda)
+  - `reduced-motion`: sem marching dots, rastros nem pulsos; a perda aparece parada; a câmera corta (o `CameraRig` já fazia isso)
+  - **Sem validação no browser**
   - Aceite:
     - Rota origem → borda branca tracejada, que fica magenta durante o miss e o manifesto; rota borda → B em magenta, com marching dots enquanto baixa.
     - Borda como quadrado rotulado "<cidade> · CDN".

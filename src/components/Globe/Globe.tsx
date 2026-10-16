@@ -7,6 +7,8 @@ import { ZOOM_MAX, ZOOM_MIN } from '../../lib/camera';
 import { toVector } from '../../lib/globe';
 import { COCKPIT_QUERY, useMediaQuery } from '../../lib/useReducedMotion';
 import { endpointNames } from '../../lib/describe';
+import { streamRoutes } from '../../lib/streamGlobe';
+import { nodeName } from '../../data/network';
 import { useSim } from '../../store';
 import { Cables } from './Cables';
 import { CameraRig } from './CameraRig';
@@ -16,6 +18,8 @@ import { Landings } from './Landings';
 import { Nodes, useGlobeLabels, useOnRoute, type PlacedLabel } from './Nodes';
 import { Route } from './Route';
 import { Sphere } from './Sphere';
+import { StreamRoute } from './StreamRoute';
+import { StreamTraffic } from './StreamTraffic';
 import { Traffic } from './Traffic';
 import { ZoomControls } from './ZoomControls';
 
@@ -40,22 +44,26 @@ export default function Globe() {
   const cockpit = useMediaQuery(COCKPIT_QUERY);
   const route = useSim((s) => s.route);
   const { origin, destination } = endpointNames(route);
+  const stream = useSim((s) => s.mode === 'stream');
+  const label = stream
+    ? `Globo 3D com o vídeo saindo de ${origin}, passando pela CDN em ${nodeName(streamRoutes(route.hops[0], route.hops.at(-1)!).edge)} e chegando a ${destination}`
+    : `Globo 3D com cabos submarinos e a rota de ${origin} a ${destination}`;
   // only the first view: later route changes are the CameraRig's job
   const [cameraStart] = useState(() => startAt(useSim.getState().origin));
 
   return (
     // a group, not an img: the cable names on the globe are real buttons and must stay reachable
-    <div className={styles.stage} role="group" aria-label={`Globo 3D com cabos submarinos e a rota de ${origin} a ${destination}`}>
+    <div className={styles.stage} role="group" aria-label={label}>
       <Canvas flat dpr={[1, 2]} gl={{ antialias: true, alpha: true }} camera={{ fov: 35, position: cameraStart, near: 0.1, far: 50 }}>
         {/* first: useFrame runs in mount order, and labels must project with this frame's camera */}
         <CameraRig controls={controls} />
         <Sphere />
         <Land />
         <Cables />
-        <Route />
+        {stream ? <StreamRoute /> : <Route />}
         <Landings />
         <Nodes labels={labels} items={items} />
-        <Traffic />
+        {stream ? <StreamTraffic /> : <Traffic />}
         {/* wheel zoom only in the cockpit: in the stacked layout the wheel must keep scrolling the page */}
         <OrbitControls
           ref={controls}

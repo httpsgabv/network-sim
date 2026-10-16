@@ -2,10 +2,12 @@ import { useFrame } from '@react-three/fiber';
 import { useEffect, useRef, type RefObject } from 'react';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import { focusAt } from '../../lib/camera';
+import { streamFocus, streamRoutes } from '../../lib/streamGlobe';
 import { toXYZ } from '../../lib/globe';
 import { useReducedMotion } from '../../lib/useReducedMotion';
 import { slerp, type Vec3 } from '../../sim/geo';
-import { snapshotOf } from '../../lib/useSim';
+import { snapshotOf, streamSnapshotOf } from '../../lib/useSim';
+import type { LatLon } from '../../sim/types';
 import { useSim } from '../../store';
 
 /** After the user drags the globe, leave the camera alone for this long. */
@@ -33,11 +35,15 @@ export function CameraRig({ controls }: { controls: RefObject<OrbitControlsImpl 
     if (reduced && clock.elapsedTime - lastCut.current < CUT_EVERY_S) return;
     lastCut.current = clock.elapsedTime;
 
-    const { t, plan, route } = useSim.getState();
-    const focus = route.posAt(focusAt(snapshotOf(plan, t)));
+    const s = useSim.getState();
+    let at: LatLon;
+    if (s.mode === 'stream') {
+      const f = streamFocus(streamSnapshotOf(s.streamPlan, s.t));
+      at = streamRoutes(s.origin, s.destination)[f.path].posAt(f.s).at;
+    } else at = s.route.posAt(focusAt(snapshotOf(s.plan, s.t))).at;
     // look slightly towards the equator so both hemispheres of the route stay in frame
-    const lat = Math.max(-15, Math.min(25, focus.at[0] * 0.6));
-    const lon = focus.at[1] + (reduced ? 0 : Math.sin(clock.elapsedTime * 0.08) * 6);
+    const lat = Math.max(-15, Math.min(25, at[0] * 0.6));
+    const lon = at[1] + (reduced ? 0 : Math.sin(clock.elapsedTime * 0.08) * 6);
 
     const dist = camera.position.length();
     const from = camera.position.clone().normalize().toArray() as Vec3;
