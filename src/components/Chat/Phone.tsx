@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { actorAt } from '../../lib/actors';
+import { actorKeyOf } from '../../lib/actors';
 import { useSim } from '../../store';
 import styles from './Chat.module.css';
 
@@ -15,7 +15,7 @@ interface Props {
 }
 
 export function Phone({ side, role, city, contact, children, footer, align = 'start' }: Props) {
-  const active = useSim((s) => actorAt(s.t).key === side);
+  const active = useSim((s) => actorKeyOf(s) === side);
   return (
     <section aria-label={`Telefone: ${role}`} className={styles.column}>
       <div className={styles.caption} style={{ textAlign: align === 'end' ? 'right' : 'left' }}>

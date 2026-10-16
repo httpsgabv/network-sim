@@ -150,7 +150,16 @@ Plano: [plan.md](plan.md). TDD em `src/sim/stream/`. Validação no browser só 
   - Testes: as funções puras de alvo da câmera e de posição das rajadas (em `lib/`) a partir do snapshot
   - Verificar: `npm test -- camera stream`; visual só se pedido
   - Arquivos: `src/components/Globe/{StreamTraffic,Route,Globe}.tsx`, `src/lib/camera.ts`, `tests/camera.test.ts`
-- [ ] **T10.7 Título da etapa, HUD e dock com 6 etapas**
+- [x] **T10.7 Título da etapa, HUD e dock com 6 etapas** (2026-10-16)
+  - Feito:
+    - `copy.ts`: `STREAM_STAGE_LABEL` e `RUNG_LABEL`.
+    - `lib/actors.ts`: `streamActor`, `STREAM_ACTOR_GROUPS` (A · Origem | Rede | B · Kenji) e `actorKeyOf(state)`, que vale nos dois modos e é usado pelo App e pelos telefones.
+    - `lib/describe.ts`: `mbps()`, `reasonText(reason, rung)` (o texto pt-BR de cada regra do ABR com seus números) e `streamHint(plan, snap, origem, borda)`.
+    - `sim/stream/engine.ts`: `streamStageAt`, `streamStagePos` e `streamStageTime` (scrubber com 100 por etapa).
+    - `StageHeader`, `Hud` e a linha do tempo do `Dock` ganharam variantes de Streaming em componentes separados (os hooks não ficam condicionais). O HUD mostra qualidade, throughput medido + banda, cwnd, regra ABR, RTT borda/origem e pacotes do segmento.
+    - 12 testes novos (`streamDescribe`, `StreamDock`); 300 no total, build verde.
+  - Nota: o `Details` ainda usa o ator da Transferência; muda nas T10.8 e T10.9
+  - **Sem validação no browser**
   - Aceite:
     - Chip do ator (A · Origem / Rede / B · Kenji) e "Etapa NN / 06".
     - Dica da etapa vinda do `describe`: a decisão ABR do segmento atual, "buffer no teto", "travou".

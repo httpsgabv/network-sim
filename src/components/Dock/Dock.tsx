@@ -1,9 +1,11 @@
 import { useId } from 'react';
-import { STAGE_LABEL, DONE_LABEL } from '../../copy';
-import { ACTOR_GROUPS } from '../../lib/actors';
+import { STAGE_LABEL, DONE_LABEL, STREAM_STAGE_LABEL } from '../../copy';
+import { ACTOR_GROUPS, STREAM_ACTOR_GROUPS } from '../../lib/actors';
 import { send } from '../../lib/payload';
-import { useSnapshot } from '../../lib/useSim';
+import { snapshotOf, useSnapshot, useStreamSnapshot } from '../../lib/useSim';
 import { STAGES, fromStagePos, toStagePos } from '../../sim/engine';
+import { ENCODE_S, streamStagePos, streamStageTime } from '../../sim/stream/engine';
+import { STREAM_STAGES } from '../../sim/stream/types';
 import { useSim } from '../../store';
 import { Segmented } from '../Segmented';
 import styles from './Dock.module.css';
@@ -57,10 +59,9 @@ export function NetworkControls() {
 
 /** Playback controls: docked under the globe. */
 export function Dock() {
-  const snap = useSnapshot();
-  const { playing, speed, toggle, stepNext, restart, scrub, setSpeed, msPerTick } = useSim();
-  const scrubId = useId();
-  const done = snap.stage >= STAGES.length;
+  const { playing, speed, toggle, stepNext, restart, setSpeed } = useSim();
+  const stream = useSim((s) => s.mode === 'stream');
+  const done = useSim((s) => (s.mode === 'stream' ? s.t >= s.streamPlan.end : snapshotOf(s.plan, s.t).stage >= STAGES.length));
 
   return (
     <section aria-label="Controles da simulação" className={styles.dock}>
@@ -89,6 +90,21 @@ export function Dock() {
         </button>
       </div>
 
+      {stream ? <StreamTimeline /> : <TransferTimeline />}
+
+      <div className={styles.knobs}>
+        <Segmented label="Velocidade" options={SPEEDS} value={speed} onChange={setSpeed} mono />
+      </div>
+    </section>
+  );
+}
+
+function TransferTimeline() {
+  const snap = useSnapshot();
+  const { scrub, msPerTick } = useSim();
+  const scrubId = useId();
+  const done = snap.stage >= STAGES.length;
+  return (
       <div className={styles.timeline}>
         <div className={styles.segments} aria-hidden="true">
           {/* who acts in each span of the bar: A · Rede · B */}
@@ -124,10 +140,48 @@ export function Dock() {
           className={styles.scrub}
         />
       </div>
+  );
+}
 
-      <div className={styles.knobs}>
-        <Segmented label="Velocidade" options={SPEEDS} value={speed} onChange={setSpeed} mono />
+const f2 = (n: number) => n.toFixed(2).replace('.', ',');
+
+/** Streaming: six stages grouped A · Rede · B; time is seconds since Kenji pressed play. */
+function StreamTimeline() {
+  const snap = useStreamSnapshot();
+  const plan = useSim((s) => s.streamPlan);
+  const scrub = useSim((s) => s.scrub);
+  const scrubId = useId();
+  const done = snap.t >= plan.end;
+  const pos = streamStagePos(plan, snap.t);
+  return (
+    <div className={styles.timeline}>
+      <div className={styles.segments} style={{ gridTemplateColumns: `repeat(${STREAM_STAGES.length}, minmax(0, 1fr))` }} aria-hidden="true">
+        {STREAM_ACTOR_GROUPS.map((g, i) => (
+          <div key={i} className={styles.group} style={{ gridColumn: `span ${g.stages.length}` }} data-active={!done && g.stages.includes(snap.stage)}>
+            {g.label}
+          </div>
+        ))}
+        {STREAM_STAGES.map((stage, i) => (
+          <div key={stage} className={styles.segment} title={STREAM_STAGE_LABEL[stage]}>
+            <div className={styles.fill} style={{ transform: `scaleX(${Math.max(0, Math.min(1, pos / 100 - i))})` }} />
+          </div>
+        ))}
       </div>
-    </section>
+      <div className={styles.meta}>
+        <span>{STREAM_STAGE_LABEL[STREAM_STAGES[snap.stage]]}</span>
+        <span>{snap.t < ENCODE_S ? 'codificando' : `t+${f2(snap.t - ENCODE_S)} s`}</span>
+      </div>
+      <label htmlFor={scrubId} className="sr-only">Linha do tempo</label>
+      <input
+        id={scrubId}
+        type="range"
+        min={0}
+        max={STREAM_STAGES.length * 100}
+        step={1}
+        value={Math.round(pos)}
+        onChange={(e) => scrub(streamStageTime(plan, Number(e.target.value)))}
+        className={styles.scrub}
+      />
+    </div>
   );
 }

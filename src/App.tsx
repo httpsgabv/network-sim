@@ -9,7 +9,7 @@ import { ModeSwitch, ScenarioControls } from './components/Dock/StreamControls';
 import { DataCredit } from './components/DataCredit';
 import { Hud } from './components/Hud';
 import { StageHeader } from './components/StageHeader';
-import { actorAt } from './lib/actors';
+import { actorKeyOf } from './lib/actors';
 import { routeSummary } from './lib/describe';
 import { sendDemo } from './lib/payload';
 import { useClock } from './lib/useSim';
@@ -27,7 +27,7 @@ export default function App() {
   useClock();
   const summary = useSim((s) => routeSummary(s.route));
   // re-renders only when the acting side changes, not on every tick
-  const networkActive = useSim((s) => actorAt(s.t).key === 'N');
+  const networkActive = useSim((s) => actorKeyOf(s) === 'N');
 
   useEffect(() => { void sendDemo('photo'); }, []);
 

@@ -4,6 +4,10 @@ import type { PacketState } from '../sim/engine';
 import { angle, toVec } from '../sim/geo';
 import { EARTH_KM, FIBRE_MS_PER_KM, routeKm, type Route } from '../sim/route';
 import type { LatLon } from '../sim/types';
+import { RUNG_LABEL } from '../copy';
+import type { Reason } from '../sim/stream/abr';
+import { DEFAULT_VIDEO_BITRATE_KBPS } from '../sim/stream/dashjs';
+import { STREAM_STAGES, type StreamPlan, type StreamSnapshot } from '../sim/stream/types';
 
 export const PACKET_STATE_LABEL: Record<PacketState, string> = {
   none: 'Ainda não criado',
@@ -85,3 +89,38 @@ export function legRows(route: Route): LegRow[] {
 /** Share of the route's fibre that lies on the sea floor. */
 export const seaShare = (route: Route) =>
   route.legs.reduce((s, l) => s + (cableById.has(l.cable) ? l.length : 0), 0) / (route.length || 1);
+
+const f1 = (n: number) => n.toFixed(1).replace('.', ',');
+
+/** kbit/s for people: "400 kbps", "2,8 Mbps". */
+export const mbps = (kbps: number) => (!Number.isFinite(kbps) ? '—' : kbps < 1000 ? `${Math.round(kbps)} kbps` : `${f1(kbps / 1000)} Mbps`);
+
+/** Why the player asked for this rung, in words (the ABR's Reason carries only numbers). */
+export function reasonText(r: Reason, rung: number): string {
+  const q = RUNG_LABEL[rung];
+  switch (r.rule) {
+    case 'throughput': return `Throughput: estimativa segura de ${mbps(r.safeKbps ?? NaN)} (× 0,9) → ${q}`;
+    case 'bola': return `BOLA: buffer de ${f1(r.bufferS ?? 0)} s${(r.placeholder ?? 0) > 0.05 ? ` + ${f1(r.placeholder!)} s virtuais` : ''} → ${q}`;
+    case 'insufficient-buffer':
+      return r.capKbps ? `Buffer curto (${f1(r.bufferS ?? 0)} s): teto de ${mbps(r.capKbps)} → ${q}` : `Buffer vazio: desce para ${q}`;
+    case 'switch-history': return `Histórico de trocas: a qualidade de cima caiu demais → ${q}`;
+    case 'abandon': return `Download lento demais (${mbps(r.safeKbps ?? NaN)}): abandonou e pediu em ${q}`;
+    default: return `Sem medição ainda: estimativa inicial de ${DEFAULT_VIDEO_BITRATE_KBPS.toLocaleString('pt-BR')} kbps → ${q}`;
+  }
+}
+
+/** The stage subtitle in Streaming: what is happening right now, with the places and numbers that explain it. */
+export function streamHint(plan: StreamPlan, snap: StreamSnapshot, origin: string, edge: string): string {
+  const d = snap.download;
+  switch (STREAM_STAGES[snap.stage]) {
+    case 'encode': return 'No navegador de Ana: o vídeo é recodificado em 4 qualidades (H.264) e cortado em segmentos de 2 s.';
+    case 'connect':
+      return `O player de Kenji abre TCP com a CDN em ${nodeName(edge)} e negocia TLS 1.3: 2 idas e voltas (${Math.round(2000 * plan.config.rttEdge)} ms) antes do 1º byte.`;
+    case 'manifest': return `Kenji pede o manifesto (qualidades e segmentos). A CDN não tem: busca na origem, em ${nodeName(origin)}.`;
+    case 'end': return 'Kenji assistiu até o fim. Veja no gráfico onde a qualidade subiu, caiu ou travou.';
+  }
+  if (snap.sample.stalled) return 'Buffer vazio: o vídeo congela até o próximo segmento chegar. É o rebuffering.';
+  if (!d) return 'Buffer cheio: o player espera para pedir o próximo segmento.';
+  const why = `Seg ${String(d.seg + 1).padStart(2, '0')}: ${reasonText(d.reason, d.rung)}.`;
+  return d.phase === 'origin' ? `${why} A CDN não tinha: busca na origem.` : why;
+}

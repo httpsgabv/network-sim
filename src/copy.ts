@@ -1,4 +1,5 @@
 import type { Stage } from './sim/engine';
+import type { StreamStage } from './sim/stream/types';
 
 export const STAGE_LABEL: Record<Stage, string> = {
   send: 'Send',
@@ -26,3 +27,15 @@ export const STAGE_HINT: Record<Stage, string> = {
 
 export const DONE_LABEL = 'Visualizado';
 export const DONE_HINT = 'Kenji visualizou. A confirmação de leitura volta para Ana.';
+
+export const STREAM_STAGE_LABEL: Record<StreamStage, string> = {
+  encode: 'Codificação',
+  connect: 'Conexão + TLS',
+  manifest: 'Manifesto',
+  startup: 'Arranque',
+  playback: 'Reprodução adaptativa',
+  end: 'Fim',
+};
+
+/** Rung names, lowest first (STREAM_LADDER_KBPS). */
+export const RUNG_LABEL = ['240p', '480p', '720p', '1080p'] as const;

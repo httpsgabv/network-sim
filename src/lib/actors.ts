@@ -1,4 +1,6 @@
 import { STAGE_START, STAGES, SEEN, type EventKind, type Stage } from '../sim/engine';
+import { streamStageAt } from '../sim/stream/engine';
+import { STREAM_STAGES, type StreamPlan, type StreamStage } from '../sim/stream/types';
 
 /** A = sender (São Paulo), N = the network, B = receiver (Tóquio). */
 export type ActorKey = 'A' | 'N' | 'B';
@@ -37,3 +39,24 @@ export const ACTOR_OF_EVENT: Record<EventKind, ActorKey> = {
 };
 
 export const ACTOR_SHORT: Record<ActorKey, string> = { A: 'A', N: '⇄', B: 'B' };
+
+// Streaming: A is Ana's origin server, B is Kenji's player (spec streaming.md, "Etapas").
+const ORIGIN = { key: 'A', label: 'A · Origem' } as const;
+const NETWORK = { key: 'N', label: 'Rede' } as const;
+const PLAYER = { key: 'B', label: 'B · Kenji' } as const;
+const STREAM_ACTOR: Record<StreamStage, { key: ActorKey; label: string }> = {
+  encode: ORIGIN, connect: NETWORK, manifest: NETWORK, startup: PLAYER, playback: PLAYER, end: PLAYER,
+};
+
+export const streamActor = (stage: number) => STREAM_ACTOR[STREAM_STAGES[stage]];
+
+export const STREAM_ACTOR_GROUPS: { key: ActorKey; label: string; stages: number[] }[] = [
+  { ...ORIGIN, stages: [0] },
+  { ...NETWORK, stages: [1, 2] },
+  { ...PLAYER, stages: [3, 4, 5] },
+];
+
+/** Who is acting now, in either mode: the side cards and phones light up for it. */
+export function actorKeyOf(s: { mode: 'transfer' | 'stream'; t: number; streamPlan: StreamPlan }): ActorKey {
+  return s.mode === 'stream' ? streamActor(streamStageAt(s.streamPlan, s.t)).key : actorAt(s.t).key;
+}

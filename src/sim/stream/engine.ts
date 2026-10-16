@@ -189,8 +189,7 @@ export function planStream(c: StreamConfig): StreamPlan {
 export function streamSnapshot(p: StreamPlan, t: number): StreamSnapshot {
   const tt = Math.min(Math.max(t, 0), p.end);
   const sample = p.samples[Math.min(p.samples.length - 1, Math.floor(tt / SAMPLE_S + 1e-9))];
-  let stage = 0;
-  for (let i = 0; i < STREAM_STAGES.length; i++) if (tt >= p.stageStart[i]) stage = i;
+  const stage = streamStageAt(p, tt);
   const a = p.attempts.find((x) => tt >= x.request && tt < x.done);
   let download: StreamSnapshot['download'] = null;
   if (a) {
@@ -203,4 +202,24 @@ export function streamSnapshot(p: StreamPlan, t: number): StreamSnapshot {
   const seg = Math.min(p.config.segBytes[0].length - 1, Math.floor(sample.playhead / p.config.segDur));
   const playingRung = tt >= p.playStart ? completed.find((x) => x.seg === seg)?.rung ?? -1 : -1;
   return { t: tt, stage, sample, download, playingRung, completed };
+}
+
+/** Index into STREAM_STAGES at time t. */
+export function streamStageAt(p: StreamPlan, t: number): number {
+  let stage = 0;
+  for (let i = 0; i < STREAM_STAGES.length; i++) if (t >= p.stageStart[i]) stage = i;
+  return stage;
+}
+
+/** Scrubber position: 100 per stage, so short stages (TLS, manifest) stay grabbable next to a 30 s playback. */
+export function streamStagePos(p: StreamPlan, t: number): number {
+  if (t >= p.end) return STREAM_STAGES.length * 100;
+  const i = streamStageAt(p, Math.max(0, t)), from = p.stageStart[i], to = p.stageStart[i + 1] ?? p.end;
+  return i * 100 + (to > from ? ((Math.max(0, t) - from) / (to - from)) * 100 : 100);
+}
+
+export function streamStageTime(p: StreamPlan, pos: number): number {
+  if (pos >= STREAM_STAGES.length * 100) return p.end;
+  const i = Math.max(0, Math.floor(pos / 100)), from = p.stageStart[i], to = p.stageStart[i + 1] ?? p.end;
+  return from + ((pos - i * 100) / 100) * (to - from);
 }
