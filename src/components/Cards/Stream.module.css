@@ -1,0 +1,56 @@
+/* Streaming side cards (mockup v9). Quality is told apart by row/height, never by colour (AGENTS.md §5–6). */
+
+.ladder { display: flex; flex-direction: column; gap: 5px; }
+.row { display: grid; grid-template-columns: 76px repeat(15, minmax(0, 1fr)); gap: 3px; align-items: center; }
+.rowLabel { display: flex; align-items: baseline; gap: 6px; font-family: var(--font-mono); white-space: nowrap; }
+.rowLabel b { font-size: 11px; font-weight: 400; color: var(--fg); }
+.rowLabel span { font-size: 10px; color: var(--fg-subtle); }
+
+/* row height grows with the rung: 1080p tallest */
+.c { box-sizing: border-box; border-radius: 3px; border: 1px solid transparent; transition: background-color 0.25s, border-color 0.25s; }
+.r0 .c { height: 12px; }
+.r1 .c { height: 16px; }
+.r2 .c { height: 20px; }
+.r3 .c { height: 24px; }
+.pending { border: 1px dashed var(--border); }
+.origin { border-color: #52525b; }
+.edge { background: #3f3f46; border-color: #71717a; }
+.got { background: var(--fg); border-color: var(--fg); }
+.transit { border: 1.5px solid var(--transit); }
+.abandoned { border: 1.5px dashed var(--fg-muted); }
+
+.axis { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 3px; font: 400 10px var(--font-mono); color: var(--fg-subtle); }
+.axis > span:last-child { display: flex; justify-content: space-between; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 0; padding: 0; list-style: none; font-size: 11px; color: var(--fg-muted); }
+.legend li { display: flex; align-items: center; gap: 5px; }
+.swatch { width: 10px; height: 10px; box-sizing: border-box; border-radius: 2px; border: 1px solid transparent; }
+
+.track { position: relative; height: 72px; margin-top: 10px; border-bottom: 1px solid #3f3f46; }
+/* a stall is a pattern (form), not a colour */
+.track[data-stalled='true'] { background-image: repeating-linear-gradient(45deg, #fafafa26 0 1.5px, transparent 1.5px 6px); }
+.block, .arriving {
+  position: absolute;
+  bottom: 0;
+  box-sizing: border-box;
+  border-radius: 3px 3px 0 0;
+  display: flex;
+  justify-content: center;
+  overflow: hidden;
+  font: 400 9px/1 var(--font-mono);
+  padding-top: 3px;
+}
+/* #09090b on #e4e4e7 ≈ 16:1 */
+.block { background: #e4e4e7; color: #09090b; border-right: 1px solid var(--surface); }
+.arriving { border: 1.5px dashed var(--transit); color: var(--fg); }
+.h0 { height: 22px; }
+.h1 { height: 36px; }
+.h2 { height: 50px; }
+.h3 { height: 64px; }
+.playhead { position: absolute; left: 0; top: -4px; bottom: -6px; width: 2px; background: var(--fg); }
+.mark { position: absolute; top: -8px; bottom: 0; border-left: 1px dashed var(--fg-subtle); }
+.mark span { position: absolute; top: -4px; left: 4px; font: 400 10px var(--font-mono); color: var(--fg-subtle); white-space: nowrap; }
+.scale { position: relative; height: 12px; font: 400 10px var(--font-mono); color: var(--fg-subtle); }
+.scale span { position: absolute; transform: translateX(-50%); }
+.scale span:first-child { transform: none; }
+.note { margin: 0; font-size: 12px; line-height: 1.45; color: var(--fg-muted); }

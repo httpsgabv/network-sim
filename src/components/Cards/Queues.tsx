@@ -56,7 +56,8 @@ function picture(poster: string | undefined, grid: FragmentGrid): CSSProperties 
   return poster ? ({ '--img': `url("${poster}")`, '--cols': grid.cols, '--rows': grid.rows } as CSSProperties) : undefined;
 }
 
-function Card({ side, active, title, desc, children }: { side: 'A' | 'B'; active: boolean; title: string; desc: string; children: ReactNode }) {
+/** A side card under its phone: chip, title, a one-line status and its body. Shared with the Streaming cards. */
+export function Card({ side, active, title, desc, children }: { side: 'A' | 'B'; active: boolean; title: string; desc: string; children: ReactNode }) {
   return (
     <section
       aria-label={`${side} · ${title}`}

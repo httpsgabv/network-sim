@@ -168,7 +168,23 @@ Plano: [plan.md](plan.md). TDD em `src/sim/stream/`. Validação no browser só 
   - Testes: `describe` produz os textos do mockup para os casos-chave; "próxima etapa" pula para o próximo limite
   - Verificar: `npm test -- Dock describe`
   - Arquivos: `src/lib/describe.ts`, `src/components/Dock/Dock.tsx`, `src/components/Hud.tsx`, `tests/Dock.test.tsx`
-- [ ] **T10.8 Escada (A) e buffer de reprodução (B)**
+- [x] **T10.8 Escada (A) e buffer de reprodução (B)** (2026-10-16)
+  - Feito:
+    - `lib/streamCards.ts` (puro, 7 testes):
+      - `ladderRows`: estado de cada célula, com precedência trânsito > baixado > abandonado > borda > origem > pendente.
+      - `ladderDesc`.
+      - `bufferBlocks`: segundos à frente do playhead e o segmento chegando.
+      - `bufferDesc` e `bufferNote`.
+    - `Cards/StreamCards.tsx`:
+      - `Ladder`: linha `memo` por qualidade; a altura cresce com a qualidade; legenda; resumo `sr-only`.
+      - `PlaybackBuffer`: blocos com altura = qualidade, o que está chegando tracejado em magenta, hachura na travada, marcas de alvo 18 s e 30 s, escala até 32 s.
+      - Estado testável: `data-state`, `data-rung`, `data-seg`, `data-stalled`.
+    - O `Card` das filas passou a ser exportado e reaproveitado.
+    - O `Details` escolhe pelo modo (`TransferDetails` | `StreamDetails`); no Streaming o cartão do meio já tem as abas Gráfico | Eventos | Segmento, sem conteúdo até a T10.9.
+    - `tests/StreamCards.test.tsx` (4 testes); 311 no total, build verde.
+  - Mudança em relação ao mockup v9: a trilha do buffer vai até **32 s** (alvo de 30 s em 1080p + o segmento chegando), não até 14 s (Decisão 7 da spec). Novo estado **abandonado**: borda tracejada cinza na qualidade original
+  - As células da Escada não são clicáveis: com 15 colunas elas ficam abaixo de 24 px. O segmento se escolhe na aba Segmento (T10.9)
+  - **Sem validação no browser**
   - Aceite:
     - `Ladder`: 4 linhas × 15 colunas, com a altura da linha marcando a qualidade. Estados: só na origem, em cache na borda, em trânsito (borda magenta) e baixado (branco). Legenda e "4 × 15 seg · N na borda".
     - `PlaybackBuffer`: blocos à frente do playhead (altura = qualidade); o segmento chegando tracejado em magenta; marca do teto de 12 s; hachura quando trava; nota contextual.
