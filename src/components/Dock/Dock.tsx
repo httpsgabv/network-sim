@@ -33,18 +33,24 @@ const MTUS = [
 // SACK and resend stages share the "recovery" color everywhere.
 const RECOVERY = new Set<number>([STAGES.indexOf('sack'), STAGES.indexOf('resend')]);
 
-/** Scenario settings (each one restarts the send): live in the top bar, next to the content type. */
-export function NetworkControls() {
-  const { loss, mtu, transfer, setLoss, setMtu } = useSim();
-  // a new MTU means re-packetizing (and re-encrypting) the same payload for real
+/** Shared by both modes: in Transferência it re-packetizes the payload, in Streaming it is the TCP MSS. */
+export function MtuControl() {
+  const { mode, mtu, transfer, setMtu } = useSim();
   const changeMtu = (value: number) => {
     setMtu(value);
-    if (transfer) void send(transfer.payload);
+    // a new MTU means re-packetizing (and re-encrypting) the same payload for real
+    if (mode === 'transfer' && transfer) void send(transfer.payload);
   };
+  return <Segmented label="Tamanho máximo do pacote (MTU)" caption="MTU" options={MTUS} value={mtu} onChange={changeMtu} mono />;
+}
+
+/** Scenario settings (each one restarts the send): live in the top bar, next to the content type. */
+export function NetworkControls() {
+  const { loss, setLoss } = useSim();
   return (
     <>
       <Segmented label="Taxa de perda de pacotes" caption="Perda" options={LOSSES} value={loss} onChange={setLoss} mono />
-      <Segmented label="Tamanho máximo do pacote (MTU)" caption="MTU" options={MTUS} value={mtu} onChange={changeMtu} mono />
+      <MtuControl />
     </>
   );
 }

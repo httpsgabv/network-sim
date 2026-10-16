@@ -2,7 +2,8 @@ import styles from './Segmented.module.css';
 
 interface Props<T> {
   label: string;
-  options: readonly { value: T; label: string }[];
+  /** `title` is a tooltip for options whose short label needs a longer description. */
+  options: readonly { value: T; label: string; title?: string }[];
   value: T;
   onChange(value: T): void;
   /** Visible caption inside the track (otherwise label is only for screen readers). */
@@ -19,6 +20,7 @@ export function Segmented<T extends string | number>({ label, options, value, on
           key={o.value}
           type="button"
           aria-pressed={o.value === value}
+          title={o.title}
           className={mono ? `${styles.item} ${styles.mono}` : styles.item}
           onClick={() => onChange(o.value)}
         >

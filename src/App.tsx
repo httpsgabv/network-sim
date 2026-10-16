@@ -3,22 +3,20 @@ import styles from './App.module.css';
 import { Details } from './components/Cards/Details';
 import { ReceiverPhone } from './components/Chat/ReceiverPhone';
 import { SenderPhone } from './components/Chat/SenderPhone';
-import { Dock, NetworkControls } from './components/Dock/Dock';
+import { Dock } from './components/Dock/Dock';
 import { RoutePicker } from './components/Dock/RoutePicker';
+import { ModeSwitch, ScenarioControls } from './components/Dock/StreamControls';
 import { DataCredit } from './components/DataCredit';
 import { Hud } from './components/Hud';
-import { Segmented } from './components/Segmented';
 import { StageHeader } from './components/StageHeader';
 import { actorAt } from './lib/actors';
 import { routeSummary } from './lib/describe';
 import { sendDemo } from './lib/payload';
 import { useClock } from './lib/useSim';
-import { KINDS, useSim, type Kind } from './store';
+import { useSim } from './store';
 
 // three.js is most of the bundle; load it after the shell paints.
 const Globe = lazy(() => import('./components/Globe/Globe'));
-
-const KIND_OPTIONS = (Object.keys(KINDS) as Kind[]).map((k) => ({ value: k, label: KINDS[k].label }));
 
 /**
  * Two layouts from the same tree (CSS only, see App.module.css):
@@ -27,7 +25,6 @@ const KIND_OPTIONS = (Object.keys(KINDS) as Kind[]).map((k) => ({ value: k, labe
  */
 export default function App() {
   useClock();
-  const kind = useSim((s) => s.kind);
   const summary = useSim((s) => routeSummary(s.route));
   // re-renders only when the acting side changes, not on every tick
   const networkActive = useSim((s) => actorAt(s.t).key === 'N');
@@ -45,10 +42,10 @@ export default function App() {
           </svg>
           <span className={styles.brandName}>Network Simulator</span>
           <span className={`${styles.badge} ${styles.brandName}`}>beta</span>
+          <ModeSwitch />
         </div>
         <div className={styles.scenario}>
-          <Segmented label="Tipo de conteúdo" options={KIND_OPTIONS} value={kind} onChange={(k) => void sendDemo(k)} />
-          <NetworkControls />
+          <ScenarioControls />
         </div>
         <div className={styles.route}>
           <RoutePicker />

@@ -116,7 +116,17 @@ Plano: [plan.md](plan.md). TDD em `src/sim/stream/`. Validação no browser só 
   - Testes: no Streaming, 1 s de relógio = 1 s de `t`; na Transferência nada muda; a borda de SP → Tóquio é Hong Kong; nunca é a origem nem o destino (todos os 210 pares)
   - Verificar: `npm test -- store` e os testes atuais verdes (Critério 9)
   - Arquivos: `src/store.ts`, `src/lib/useSim.ts`, `src/data/network.ts`, `tests/store.test.ts`
-- [ ] **T10.5 Barra superior: modo, perfil e perda por modo**
+- [x] **T10.5 Barra superior: modo, perfil e perda por modo** (2026-10-16)
+  - Feito:
+    - `Dock/StreamControls.tsx` com `ModeSwitch` (ao lado da marca), `StreamControls` (Rede: Fibra · 4G · Queda · Túnel, perda 0 / 0,5 / 1 / 5 %, MTU) e `ScenarioControls` (escolhe o grupo pelo modo).
+    - `MtuControl` saiu do `NetworkControls` e é compartilhado: só reempacota o payload na Transferência.
+    - O `Segmented` aceita um `title` por opção (a descrição do perfil).
+    - `tests/StreamControls.test.tsx` (5 testes); build verde.
+  - Layout:
+    - No cockpit estreito (1100–1279 px) a barra pode quebrar em 2 linhas (`.nav { flex-wrap: wrap }`). Ela já ficava no limite antes do alternador.
+    - A `.brand` quebra linha no celular.
+    - **Sem validação no browser.**
+  - Enquanto as T10.6–T10.10 não chegam, o modo Streaming troca só a barra; globo, telefones, dock e cartões ainda mostram a Transferência
   - Aceite: segmented **Transferência | Streaming** depois da marca. No Streaming, o tipo de conteúdo dá lugar a **Rede: Fibra · 4G · Queda · Túnel** (com `title` descrevendo cada perfil) e a perda vira 0 / 0,5 / 1 / 5 %; MTU e rota iguais. Tudo com `aria-pressed` e alvos ≥ 32 px na barra (como hoje)
   - Testes: alternar o modo troca os grupos; escolher um perfil chama `setProfile` e zera `t`
   - Verificar: `npm test -- Dock`
