@@ -4,7 +4,7 @@ Mapa das capacidades do produto: o que o simulador faz, qual spec define cada um
 
 Legenda: ✅ entregue · 🚧 em andamento · ⬜ fora de escopo (decisão registrada na spec)
 
-Specs: **[B]** [simulador-base](simulador-base.md) · **[R]** [origem-destino](origem-destino.md) · **[C]** [cabos-submarinos](cabos-submarinos.md)
+Specs: **[B]** [simulador-base](simulador-base.md) · **[R]** [origem-destino](origem-destino.md) · **[C]** [cabos-submarinos](cabos-submarinos.md) · **[S]** [streaming](streaming.md)
 
 ## 1. Conteúdo e protocolo (núcleo `src/sim/`, puro)
 
@@ -51,6 +51,18 @@ Specs: **[B]** [simulador-base](simulador-base.md) · **[R]** [origem-destino](o
 | Play/pause, próxima etapa, reiniciar, scrubber, velocidade 0,25×–4× | B | `components/Dock/Dock`, `store` | ✅ |
 | Cenário: tipo de conteúdo, perda, MTU (reiniciam o envio) | B | `Dock/NetworkControls`, `Segmented` | ✅ |
 | Upload de arquivo próprio (nunca sai do navegador) | B | `Chat/SenderPhone`, `lib/payload` | ✅ |
+
+## 4b. Streaming sob demanda (spec S, mockup v9 aprovado em 2026-10-16)
+
+| Capacidade | Spec | Código | Estado |
+|---|---|---|---|
+| Modo Transferência | Streaming na barra; perfis de rede (Fibra, 4G, Queda, Túnel) | S | `store`, `components/Dock/StreamControls` | 🚧 |
+| Núcleo puro do stream: TCP por rodadas de RTT (slow start, CUBIC β 0,7, reinício após ociosidade), CDN com pré-busca, buffer com teto, travadas | S | `sim/stream/{tcp,engine,profiles}` | 🚧 |
+| ABR dash.js Dynamic (Throughput ↔ BOLA) com a decisão explicada por segmento | S | `sim/stream/abr` | 🚧 |
+| QoE: início, travadas, bitrate médio, trocas e gráfico no tempo | S | `sim/stream/qoe`, `Cards/QoeChart` | 🚧 |
+| Globo com origem → borda (miss) e borda → Kenji, rajadas por segmento | S | `Globe/StreamTraffic`, `Globe/Route` | 🚧 |
+| Escada (A), buffer de reprodução (B), player no telefone de Kenji | S | `Cards/Ladder`, `Cards/PlaybackBuffer`, `Chat/StreamPlayer` | 🚧 |
+| Re-encoding real em 4 qualidades (WebCodecs + mediabunny), fMP4/CMAF, reprodução por MSE presa ao `t` | S | `lib/media/*` | 🚧 |
 
 ## 5. Qualidade transversal
 
