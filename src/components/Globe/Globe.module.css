@@ -43,6 +43,33 @@
   color: var(--fg-subtle);
 }
 
+/* landing stations on the route: smaller than cities, never mistaken for one */
+.labelLanding {
+  font-size: 9px;
+  color: var(--fg-muted);
+}
+
+/* cable names: outlined box centred on the cable (shape, not colour, tells them apart from places) */
+.cableLabel {
+  display: block;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+  padding: 1px 6px;
+  border: 1px solid #3f3f46;
+  border-radius: 6px;
+  background: #000000cc;
+  min-height: 24px;
+  font: 400 10px var(--font-mono);
+  letter-spacing: 0.04em;
+  color: #e4e4e7;
+  user-select: none;
+  pointer-events: auto;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.cableLabel:hover { border-color: var(--fg-muted); color: var(--fg); }
+.cableLabel:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+
 /* cockpit: the globe is sized by the height it is given, never by its width */
 @media (min-width: 1100px) and (min-height: 640px) {
   /* min-width/overflow drop the automatic minimum size, else the canvas's last pixel width blocks shrinking */

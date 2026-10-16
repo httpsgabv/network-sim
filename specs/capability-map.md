@@ -4,7 +4,7 @@ Mapa das capacidades do produto: o que o simulador faz, qual spec define cada um
 
 Legenda: ✅ entregue · 🚧 em andamento · ⬜ fora de escopo (decisão registrada na spec)
 
-Specs: **[B]** [simulador-base](simulador-base.md) · **[R]** [origem-destino](origem-destino.md)
+Specs: **[B]** [simulador-base](simulador-base.md) · **[R]** [origem-destino](origem-destino.md) · **[C]** [cabos-submarinos](cabos-submarinos.md)
 
 ## 1. Conteúdo e protocolo (núcleo `src/sim/`, puro)
 
@@ -22,23 +22,26 @@ Specs: **[B]** [simulador-base](simulador-base.md) · **[R]** [origem-destino](o
 
 | Capacidade | Spec | Código | Estado |
 |---|---|---|---|
-| Grafo de 15 cidades + 6 estações de cabo, cabos escritos à mão | B, R | `data/nodes`, `data/cables` | ✅ |
-| Rota mais curta entre quaisquer duas cidades (210 pares) | B, R | `sim/route` | ✅ |
+| ~~Grafo de 15 cidades + 6 estações de cabo, cabos escritos à mão~~ substituído pela malha real (C) | B, R | `data/nodes`, `data/cables` | ✅ |
+| Rota mais curta (em km de fibra, terra × 1,3) entre quaisquer duas cidades (210 pares), Dijkstra com heap | B, R, C | `sim/route`, `data/network` | ✅ |
 | Backbone terrestre dos EUA (`nyc → lax`) | R | `data/cables` | ✅ |
 | **Escolher origem e destino** (selects na barra, ⇄ inverte, reinicia o envio) | R | `store` (`setRoute`), `components/Dock/RoutePicker`, `components/ui/Select` | ✅ |
 | Distância, saltos e latência derivados da rota (5 µs/km) | R | `sim/route` (`routeKm`, `msPerTick`), `Hud`, `Dock`, `EventLog` | ✅ |
-| Cidades novas ou mais cabos | R | — | ⬜ perguntar antes |
+| Cidades novas | R | — | ⬜ perguntar antes |
+| **Cabos e estações de pouso reais** (TeleGeography 2022, CC BY-NC-SA 3.0: 508 cabos, 1.368 estações) + backhaul ≤ 1.500 km | C | `data/cables.json`, `data/network`, `scripts/build-cables` | ✅ |
+| Pacote segue o traçado do cabo (sem arco) | C | `sim/route` (`posAt`) | ✅ |
 
 ## 3. Visualização
 
 | Capacidade | Spec | Código | Estado |
 |---|---|---|---|
 | Globo 3D: continentes em pontos, cabos, rota com marching dots, nós rotulados | B | `components/Globe/*` | ✅ |
-| Pacotes em arco com rastro, × na perda, SACK e retransmissão âmbar | B | `Globe/Traffic` | ✅ |
+| Pacotes sobre o cabo com rastro, × na perda, SACK e retransmissão âmbar | B, C | `Globe/Traffic` | ✅ |
 | Câmera seguindo o pacote líder; abre sobre a origem escolhida | B, R | `Globe/CameraRig`, `lib/camera` | ✅ |
 | Telefones A (Ana) e B (Kenji) com cidade, status e revelação progressiva | B, R | `components/Chat/*` | ✅ |
 | Fila de saída (A) e buffer de entrada (B) com FLIP | B | `components/Cards/Queues`, `lib/useFlip` | ✅ |
 | Inspetor de pacote (hex, checksum, TTL) e log de eventos | B | `components/Cards/*` | ✅ |
+| Malha mundial de cabos (1 draw call), cabos da rota rotulados, estações de pouso, aba Rota (trechos), ficha do cabo (clique no globo ou na lista) e crédito da licença | C | `Globe/{Cables,Route,Landings}`, `Cards/RouteLegs`, `Cards/CableCard`, `DataCredit` | ✅ |
 | Layout cockpit (sem rolagem ≥ 1100×640) e empilhado | B | `App.module.css` | ✅ |
 
 ## 4. Controle
@@ -55,7 +58,7 @@ Specs: **[B]** [simulador-base](simulador-base.md) · **[R]** [origem-destino](o
 |---|---|---|
 | Acessibilidade (contraste ≥ 4.5:1, nomes, foco, teclado, `reduced-motion`) | B, R | AGENTS.md §8, testes com Testing Library |
 | Design monocromático + 3 cores de sinal | B, R | AGENTS.md §5–6 |
-| `src/sim/` ≥ 90 % de cobertura | B | `npm run coverage` (hoje 98,9 % de linhas) |
+| `src/sim/` ≥ 90 % de cobertura | B | `npm run coverage` (hoje 99 % de linhas) |
 
 ## Mapa de dependências entre capacidades
 

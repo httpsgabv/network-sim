@@ -1,37 +1,45 @@
-import { Line } from '@react-three/drei';
-import { useMemo } from 'react';
-import { CABLES } from '../../data/cables';
-import { nodeById } from '../../data/nodes';
-import { arc } from '../../lib/globe';
-import type { LatLon } from '../../sim/types';
+import type { ThreeEvent } from '@react-three/fiber';
+import { useEffect, useMemo } from 'react';
+import { BufferAttribute, BufferGeometry } from 'three';
+import { CABLE_DATA } from '../../data/cableData';
+import { cableMesh, nearestCable } from '../../lib/globe';
+import { useSim } from '../../store';
 
+const R = 1.002;
+/** How far from a cable a click still picks it: ~3 px at the default camera distance. */
+const PICK = 0.012;
+/** A press that moved more than this (px) was a drag to rotate the globe, not a click. */
+const DRAG_PX = 4;
+
+/** Every submarine cable in the dataset, faint: the infrastructure around the route. One draw call. */
 export function Cables() {
-  const lines = useMemo(
-    () =>
-      CABLES.map((c) => ({
-        id: c.id,
-        points: arc(c.path.map((p): LatLon => (typeof p === 'string' ? nodeById.get(p)!.at : p)), 1.002),
-        dashed: c.kind === 'terrestrial',
-      })),
-    [],
-  );
+  const mesh = useMemo(() => cableMesh(CABLE_DATA.cables.map((c) => ({ id: c.id, lines: c.legs.map((l) => l.points) })), R), []);
+  const geometry = useMemo(() => {
+    const g = new BufferGeometry();
+    g.setAttribute('position', new BufferAttribute(mesh.positions, 3));
+    return g;
+  }, [mesh]);
+  useEffect(() => () => geometry.dispose(), [geometry]);
+  const selectCable = useSim((s) => s.selectCable);
+
+  // Clicks land on an invisible shell over the globe (cheap to raycast, and it hides the far side);
+  // the nearest drawn cable to that point is the one picked.
+  // ponytail: no hover cursor, that would scan every segment on each pointer move; add a spatial index if wanted.
+  const pick = (e: ThreeEvent<MouseEvent>) => {
+    if (e.delta > DRAG_PX) return;
+    const id = nearestCable(mesh, e.point.toArray(), PICK);
+    if (id) { e.stopPropagation(); selectCable(id); }
+  };
 
   return (
     <>
-      {lines.map((l) => (
-        <Line
-          key={l.id}
-          points={l.points}
-          color="#ffffff"
-          lineWidth={0.8}
-          transparent
-          opacity={l.dashed ? 0.08 : 0.12}
-          depthWrite={false}
-          dashed={l.dashed}
-          dashSize={0.01}
-          gapSize={0.01}
-        />
-      ))}
+      <lineSegments geometry={geometry}>
+        <lineBasicMaterial color="#ffffff" transparent opacity={0.09} depthWrite={false} />
+      </lineSegments>
+      <mesh onClick={pick}>
+        <sphereGeometry args={[R, 48, 48]} />
+        <meshBasicMaterial transparent opacity={0} depthWrite={false} colorWrite={false} />
+      </mesh>
     </>
   );
 }

@@ -1,0 +1,106 @@
+# Feature — Cabos submarinos reais (spec, mockup v8 e plano aprovados em 2026-10-16; T9.1–T9.7 feitas)
+
+Plano: [plan.md](plan.md). Validação no browser só quando pedida.
+
+- [x] **T9.1 Funções puras do script de cabos**
+  - Aceite: `scripts/lib/cables.ts` exporta `simplify(points, tolKm)` (Douglas–Peucker), `cableGraph(lines)` (pontas a ≤ 1 km fundidas), `snapLanding(graph, at)` (vértice mais próximo, ≤ 50 km), `splitLegs(lines, landings)` (trechos entre estações vizinhas, com ramos), `isActive({ rfsYear, planned }, year)` e `km(a, b)`
+  - Mudança (2026-10-16): **`.ts` em vez de `.mjs`**. O Node 26 remove tipos nativamente, então o script roda direto com `node`, os testes ficam tipados e o código reusa `src/sim/geo.ts`. O `tsconfig` passou a incluir `scripts/` e `allowImportingTsExtensions`
+  - Testes (fixture escrita à mão, sem rede): pontas preservadas e tolerância respeitada; 3 estações numa linha = 2 trechos; Y com 3 estações = 3 trechos; estação a > 50 km fica fora; RFS no futuro é descartado
+  - Verificar: `npm test -- build-cables`
+  - Arquivos: `scripts/lib/cables.ts`, `tests/build-cables.test.ts`, `tsconfig.json`
+- [x] **T9.2 `npm run data:cables` → `src/data/cables.json`**
+  - Fonte (2026-10-16): zip do repositório arquivado no Internet Archive (commit `54055b5`, arquivos de 2022-08-05), com o `LICENSE` **CC BY-NC-SA 3.0 Unported** conferido. URL e SHA-256 estão fixos no script, e o build falha se o hash mudar. O repositório original foi apagado e a API atual do site não tem licença aberta (Decisão 4 da spec)
+  - Feito: `scripts/build-cables.ts` (leitor de zip mínimo sobre `zlib`, sem dependência nova), `npm run data:cables`, `src/data/cables.json` (**446 cabos, 1.233 estações, 2.129 trechos, 620 KB**, reprodutível byte a byte) e `src/data/cableData.ts` (tipo `CableData` + `CABLE_DATA`). Ficam de fora 70 cabos (planejados em 2022 ou sem trecho roteável) e 34 estações não roteadas (fora do traçado ou no mesmo vértice de outra), com aviso no log
+  - Testes: `tests/data.test.ts` checa a fonte e a licença registradas, o limite de 1,5 MB, ids únicos, a presença dos cabos-chave (Monet, Seabras-1, EllaLink, MAREA, FASTER, JUPITER) e que todo trecho liga duas estações do próprio cabo, começando e terminando a ≤ 50 km delas. Isso substitui o "≤ 1,5 × soma geodésica" do plano, que era tautológico
+  - Ajuste: o `tsconfig` inclui só `scripts/lib`. O `build-cables.ts` usa `Buffer`/`zlib` sem `@types/node` (dependência nova = perguntar antes), como o `build-land-dots.mjs`; o ESLint continua passando nele
+  - Em aberto: incluir os 63 cabos "planejados" em 2022 com RFS ≤ 2026 (2Africa, SJC2, Grace Hopper, Equiano, Firmina…)? Hoje ficam de fora (pergunta 5 da spec)
+- [x] **T9.2b Cabos planejados em 2022 com RFS ≤ 2026** (aprovado em 2026-10-16)
+  - `isActive(c, year, plannedUntil)`; o script usa `PLANNED_UNTIL = 2026` e grava `planned: true` (a ficha vai mostrar "planejado em 2022"). O dataset passou para **508 cabos, 1.368 estações, 3.004 trechos, 884 KB** (inclui 2Africa, Grace Hopper e Southern Cross NEXT)
+- [x] **T9.3 Grafo real, heap e pacote sem arco**
+  - Feito:
+    - `nodes.ts` ficou só com as 15 cidades.
+    - `cables.ts` tem `BACKBONES` (BR, EU, FR, US-East e US-Transcon; sem as estações à mão) e `backhaul(cities, landings, 1500)`, com comentários `ponytail:`.
+    - Novo `data/network.ts` com `NETWORK_NODES`/`NETWORK_CABLES`. Cada trecho do JSON vira um `Cable` com o id do cabo, e o `buildGraph` não mudou. Exporta também `nodeById` (cidades + estações), `cableById`, `cableName` e `nodeName` (estação sem o país: "Fortaleza, Brazil" → "Fortaleza").
+    - `route.ts`:
+      - `TERRESTRIAL_DETOUR = 1.3` em todo trecho terrestre, inclusive nos backbones. É o custo e o tempo; o desenho segue a geometria, e o `posAt` converte fibra → desenho.
+      - heap binária;
+      - grafo em cache por (nodes, cables);
+      - `h = 0`; sai `HOP_ALTITUDE`.
+    - `describe.ts` e `store.ts` leem o `network`.
+  - Rotas (checkpoint):
+    - SP → Tóquio: 23.861 km, 9 saltos, ≈ 119 ms, por GlobeNet, Gemini Bermuda, US-Transcon e Unity/EAC-Pacific.
+    - Londres → Frankfurt: 797 km, ≈ 4 ms, pelo PEC UK–Belgium.
+    - SP → Miami: 9.147 km, ≈ 46 ms, por Americas-II e o Caribe.
+    - SP → Sydney: ≈ 135 ms, pelo Southern Cross NEXT.
+    - Cidade do Cabo → Mumbai: ≈ 48 ms, pelo 2Africa.
+    - NY → Londres: ≈ 30 ms, pelo EXA.
+  - Testes: `tests/route.test.ts` reescrito:
+    - os 210 pares começam e terminam na cidade;
+    - toda perna é cabo real entre estações reais ou link terrestre;
+    - faixas de latência;
+    - grafo pequeno (mais curto ≠ menos saltos, desvio por terra, waypoints, inalcançável);
+    - `h === 0`;
+    - continuidade;
+    - perna terrestre esticada × 1,3.
+
+    `tests/data.test.ts` checa backbones e backhaul ≤ 1.500 km. O "mesma seed" continua coberto pelo `store.test`. Resultado: 164 testes; `sim/` com 99 % de linhas; lint e build verdes.
+  - Pendências para a UI:
+    - (a) ~~até a T9.4, o globo desenha só os backbones~~ resolvido na T9.4;
+    - (b) aparecem saltos com o mesmo nome dos dois lados, como "Fortaleza → Fortaleza" (cidade → estação, 3 km) e "Mumbai → Mumbai" (0 km); a aba Rota (T9.5) deve juntar esses casos ou mostrar "estação de pouso";
+    - (c) o chunk `index` foi para ~1,2 MB com o JSON. O plano prevê import dinâmico se incomodar.
+- [x] **T9.4 Globo: malha, cabos da rota e pacote no cabo**
+  - Feito:
+    - `lib/globe.segmentBuffer(lines, r)`.
+    - `Globe/Cables`: os 508 cabos num único `lineSegments` branco a 9 %. O WebGL desenha `LineBasic` com 1 px, por isso um pouco acima dos ~8 %.
+    - `Globe/Route`: os cabos inteiros da rota (`lineSegments`, 35 %), cada trecho submarino percorrido (`<Line>` sólida, 70 %), cada trecho terrestre tracejado (50 %) e marching dots na rota toda. Com reduced motion, os marching dots não aparecem.
+    - Novo `Globe/Landings`: todas as estações em pontos `#71717a` de 2 px; as da rota em branco, 4 px.
+    - Rótulos: `lib/describe.cableRuns(route)` (trechos seguidos do mesmo cabo viram um rótulo no meio) e `globeLabels(route)` (cidades + estações da rota que não estão a < 50 km de uma cidade + nomes de cabo). `Nodes`/`Globe` posicionam essa lista dinâmica no overlay (`data-kind`). Estilos: estação em 9 px `--fg-muted`; cabo numa caixa contornada `#3f3f46` centrada no cabo (forma, não cor).
+    - `Traffic` e `CameraRig` não mudaram: com `h = 0`, pacote, rastro e câmera já seguem o cabo.
+  - Testes: `tests/globeData.test.ts` (6): buffer de segmentos, `cableRuns` (junta trechos, ignora terra, rótulo no meio) e `globeLabels` (15 cidades, estação colada na cidade não duplica, chaves únicas). Resultado: 170 testes; lint e build verdes.
+  - **Sem validação no browser** (não pedida). Fica sem conferência visual: opacidades, sobreposição de rótulos em rotas com muitas estações (ex.: SP → Miami pelo Caribe) e fps com a malha completa.
+- [x] **T9.5 Aba Rota (lista de trechos)**
+  - Feito:
+    - `store`: `Panel` ganha `'route'`, mais `selectedCable` e `selectCable(id | null)`. Selecionar um cabo abre a aba Rota; `null` fecha a ficha.
+    - `lib/describe`: `legRows(route)` dá nº, "A → B", cabo, se é mar, km de fibra (com o × 1,3 em terra) e ms. Quando os dois lados têm o mesmo nome, o trecho vira "Fortaleza · estação de pouso", o que resolve a pendência (b) da T9.3. `seaShare(route)` dá a fração do caminho no mar.
+    - `Cards/RouteLegs` (+ CSS module): cabeçalho "Origem → Destino" com km, saltos e ≈ ms; lista `aria-label="Trechos da rota"`; cabo submarino como botão "Ficha do cabo X" (28 px, contornado); terra como "Backhaul · por terra"; nota "% do caminho é fibra no fundo do mar".
+    - Trecho ativo = o do `focusAt` (o mesmo ponto da câmera), só quando a rede age. Ele recebe `data-active` + `aria-current="step"`, com peso 600 e borda esquerda branca, sem cor.
+    - `Details` ganha a terceira opção "Rota" no Segmented.
+  - Testes: `tests/RouteLegs.test.tsx` (8):
+    - `legRows` soma a rota e o ms acompanha o km;
+    - nome do cabo no mar e "Backhaul/Backbone" em terra;
+    - nunca aparece "X → X";
+    - a aba existe no Segmented;
+    - um item por trecho, com o resumo;
+    - `data-active` só em trânsito;
+    - trocar a rota redesenha;
+    - clicar no cabo seleciona.
+
+    Resultado: 178 testes; lint e build verdes. Sem validação no browser.
+  - Por enquanto, clicar no cabo só seleciona (`selectedCable`). A ficha chega na T9.6.
+- [x] **T9.6 Ficha do cabo + clique no globo**
+  - Feito:
+    - **`Cards/CableCard`** (+ CSS module), dentro da aba Rota no lugar da lista quando há `selectedCable`. Mostra:
+      - "← Trechos";
+      - nome;
+      - chip "Na rota" (sólido) ou "Fora da rota" (tracejado), e "Planejado em 2022" (tracejado) quando for o caso;
+      - em operação desde, comprimento (o oficial, ou o desenhado se faltar), nº de estações e ≈ ms ponta a ponta;
+      - proprietários;
+      - estações, com as da rota em borda branca (`data-on-route`);
+      - fonte "TeleGeography (dados de 2022) · CC BY-NC-SA 3.0".
+    - **Picking no globo**: `lib/globe.cableMesh` guarda o dono de cada segmento e `nearestCable(mesh, p, maxDist)` faz uma varredura linear só no clique. Uma casca invisível (r = 1,002) recebe o `onClick` e esconde o lado de trás do globo; arrastar mais de 4 px não conta como clique. Sem cursor de hover (`ponytail:`).
+    - **Cabo selecionado fora da rota**: fica realçado a 60 % (`Globe/Route`).
+    - **Rótulos de cabo no globo** viram `<button>` "Ficha do cabo X", com alvo de 24 px, foco visível e hover. Saem do overlay `aria-hidden` (cidades e estações continuam decorativas), e o palco passa de `role="img"` para `role="group"`. Rótulo atrás do globo fica `visibility: hidden` (nem clicável, nem focável).
+  - Testes:
+    - `tests/CableCard.test.tsx` (4): abre pela lista e volta; ano, comprimento, proprietários e estações (com as da rota); "Fora da rota" + "Planejado em 2022" (2Africa numa rota Londres → Frankfurt); fonte.
+    - `tests/globeData.test.ts` (+2): dono por segmento; o cabo mais próximo ou nada.
+
+    Resultado: 184 testes; lint e build verdes.
+  - **Sem validação no browser**: precisão do clique (`PICK = 0.012`), legibilidade dos botões sobre o globo e se o clique na casca atrapalha o arrasto. O `DRAG_PX` deveria cobrir esse último caso.
+- [x] **T9.7 Atribuição e documentação**
+  - Feito:
+    - `components/DataCredit` (+ CSS) sob o dock, sempre visível: "Dados de cabos: TeleGeography (2022) · CC BY-NC-SA", com link para o site e para a licença 3.0.
+    - README: fonte, commit, data, licença, obra derivada sob a mesma licença e uso não comercial; `data:cables`; rota em km de fibra; malha de 2022 com os "planejados".
+    - AGENTS.md: §2 (`data:cables`), §3 (`src/data/`, `scripts/`, `selectedCable`, `RouteLegs`/`CableCard`), §7 (pacote sobre o cabo, malha numa draw call) e §9 (regra da licença).
+    - `simulador-base.md`: premissa 4 e "Salto entre nós" revogadas, com link.
+    - Capability map com ✅. Spec marcada como IMPLEMENTADA.
+  - Testes: `tests/CableCard.test.tsx` (+1) verifica o link da fonte, o link da licença e o ano.

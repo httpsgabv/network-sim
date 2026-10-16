@@ -9,7 +9,7 @@ export interface NetNode {
   at: LatLon;
 }
 
-// endpoint/cdn get labels on the globe; landing stations are routing-only.
+// The pickable cities. Landing stations come from cables.json (see data/network.ts) and only route.
 export const NODES: NetNode[] = [
   { id: 'sao', name: 'São Paulo', kind: 'endpoint', at: [-23.55, -46.63] },
   { id: 'tyo', name: 'Tóquio', kind: 'endpoint', at: [35.68, 139.69] },
@@ -26,15 +26,7 @@ export const NODES: NetNode[] = [
   { id: 'lax', name: 'Los Angeles', kind: 'cdn', at: [33.94, -118.4] },
   { id: 'syd', name: 'Sydney', kind: 'cdn', at: [-33.87, 151.2] },
   { id: 'cpt', name: 'Cidade do Cabo', kind: 'cdn', at: [-33.92, 18.42] },
-  { id: 'vab', name: 'Virginia Beach', kind: 'landing', at: [36.85, -75.98] },
-  { id: 'bil', name: 'Bilbao', kind: 'landing', at: [43.26, -2.93] },
-  { id: 'ore', name: 'Hillsboro', kind: 'landing', at: [45.5, -123.9] },
-  { id: 'lis', name: 'Lisboa', kind: 'landing', at: [38.72, -9.14] },
-  { id: 'lad', name: 'Luanda', kind: 'landing', at: [-8.84, 13.23] },
-  { id: 'mba', name: 'Mombasa', kind: 'landing', at: [-4.04, 39.67] },
 ];
 
-export const nodeById = new Map(NODES.map((n) => [n.id, n]));
-
-/** The pickable cities (landing stations only route), west → east. */
-export const CITIES = NODES.filter((n) => n.kind !== 'landing').sort((a, b) => a.at[1] - b.at[1]);
+/** The pickable cities, west → east. */
+export const CITIES = [...NODES].sort((a, b) => a.at[1] - b.at[1]);

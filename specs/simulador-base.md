@@ -8,7 +8,7 @@
 1. **App web 100% client-side** (React + Vite + TypeScript). Sem backend — a "rede" é uma simulação determinística no navegador.
 2. **Simulação educativa, não emulação real.** Pacotes, latências e perdas são modelados com números plausíveis, mas a animação é desacelerada para ser visível (ex.: 1 ms real ≈ 50–200 ms de tela, ajustável).
 3. **Rota fixa por cenário**: remetente em São Paulo → CDN/IXP São Paulo → cabo submarino (ex.: EllaLink/SAm-1) → CDN Lisboa/Miami → … → destinatário (ex.: Tóquio). O usuário escolhe origem/destino entre ~10 cidades pré-definidas; o caminho é calculado num grafo estático de nós + cabos.
-4. **Cabos submarinos**: dataset estático **escrito à mão** (~20–30 cabos reais como EllaLink, SEA-ME-WE 5/6, SJC2, MAREA, com waypoints aproximados) em `src/data/cables.ts`. Não copiamos o GeoJSON do TeleGeography (licença CC BY-NC-SA). Sem fetch em runtime.
+4. ~~**Cabos submarinos**: dataset estático **escrito à mão**~~ **Revogada em 2026-10-16** por [cabos-submarinos.md](cabos-submarinos.md): passamos a usar a malha real do TeleGeography (snapshot aberto de 2022, CC BY-NC-SA 3.0, gerada por `npm run data:cables`). Texto original: (~20–30 cabos reais como EllaLink, SEA-ME-WE 5/6, SJC2, MAREA, com waypoints aproximados) em `src/data/cables.ts`. Não copiamos o GeoJSON do TeleGeography (licença CC BY-NC-SA). Sem fetch em runtime.
 5. **Criptografia real e didática**: usamos WebCrypto **AES-GCM** de verdade para cifrar o payload antes de fatiar e decifrar após remontagem. A troca de chaves (TLS/E2E) é mostrada apenas como etapa animada, não implementada.
 6. **Pacotes "reais" na medida do útil**: o arquivo (texto/imagem/vídeo curto) vira bytes → cifra → fatiado em chunks de tamanho configurável (default 1 KB "MTU didático", senão uma foto viraria milhares de pacotes). Cada pacote tem `seq`, `checksum`, `ttl`, `size`.
 7. **Perda de pacotes**: taxa configurável (0–30%) + botão "derrubar pacote" manual. Recuperação via **ACK seletivo (SACK)**: receptor ordena, detecta lacunas e pede retransmissão só dos faltantes.
@@ -90,7 +90,7 @@ Sem lib de geo além de matemática lat/lon → vetor 3D (≈10 linhas). Contine
 |---|---|
 | Câmera | segue o pacote líder ao longo da rota; volta junto com o SACK; drift lento quando ociosa |
 | Pacote em trânsito | ponto branco com glow + **rastro** (cauda ~5% da rota) |
-| Salto entre nós | pacote viaja em **arco acima da superfície** (altitude ∝ sin(πf)), não colado no cabo |
+| Salto entre nós | ~~pacote viaja em **arco acima da superfície** (altitude ∝ sin(πf)), não colado no cabo~~ desde [cabos-submarinos.md](cabos-submarinos.md): o pacote anda **colado no traçado real do cabo** |
 | Perda | pacote para, vira × vermelho com anel que expande e some |
 | SACK | anel âmbar viajando **de volta** pela rota com rastro |
 | Retransmissão | pontos âmbar com rastro mais longo |
@@ -122,7 +122,7 @@ src/
     types.ts
   data/
     nodes.ts           → cidades, CDNs, IXPs (lat/lon)
-    cables.geo.json    → subset de cabos submarinos
+    cables.json        → cabos submarinos reais (gerado; ver cabos-submarinos.md)
   store.ts             → zustand: estado da simulação + controles
   components/
     Globe/             → Globe, Cables, Nodes, PacketSwarm (instanced), AckFlights

@@ -2,7 +2,7 @@ import { OrbitControls } from '@react-three/drei';
 import { Canvas } from '@react-three/fiber';
 import { useRef, useState } from 'react';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
-import { nodeById } from '../../data/nodes';
+import { nodeById } from '../../data/network';
 import { toVector } from '../../lib/globe';
 import { endpointNames } from '../../lib/describe';
 import { useSim } from '../../store';
@@ -10,7 +10,8 @@ import { Cables } from './Cables';
 import { CameraRig } from './CameraRig';
 import styles from './Globe.module.css';
 import { Land } from './Land';
-import { LABELED, Nodes, useOnRoute } from './Nodes';
+import { Landings } from './Landings';
+import { Nodes, useGlobeLabels, useOnRoute, type PlacedLabel } from './Nodes';
 import { Route } from './Route';
 import { Sphere } from './Sphere';
 import { Traffic } from './Traffic';
@@ -21,17 +22,26 @@ const startAt = (origin: string) => {
   return toVector([Math.max(-15, Math.min(25, lat * 0.6)), lon], 4.2).toArray();
 };
 
+// City and landing names sit right of their dot; cable names are centred on the cable, outlined.
+const labelClass = (n: PlacedLabel, onRoute: boolean) =>
+  n.kind === 'cable' ? styles.cableLabel
+    : n.kind === 'landing' ? `${styles.label} ${styles.labelLanding}`
+      : onRoute ? styles.label : `${styles.label} ${styles.labelDim}`;
+
 export default function Globe() {
   const labels = useRef<(HTMLDivElement | null)[]>([]);
   const controls = useRef<OrbitControlsImpl>(null);
   const onRoute = useOnRoute();
+  const items = useGlobeLabels();
+  const selectCable = useSim((s) => s.selectCable);
   const route = useSim((s) => s.route);
   const { origin, destination } = endpointNames(route);
   // only the first view: later route changes are the CameraRig's job
   const [cameraStart] = useState(() => startAt(useSim.getState().origin));
 
   return (
-    <div className={styles.stage} role="img" aria-label={`Globo 3D com cabos submarinos e a rota de ${origin} a ${destination}`}>
+    // a group, not an img: the cable names on the globe are real buttons and must stay reachable
+    <div className={styles.stage} role="group" aria-label={`Globo 3D com cabos submarinos e a rota de ${origin} a ${destination}`}>
       <Canvas flat dpr={[1, 2]} gl={{ antialias: true, alpha: true }} camera={{ fov: 35, position: cameraStart, near: 0.1, far: 50 }}>
         {/* first: useFrame runs in mount order, and labels must project with this frame's camera */}
         <CameraRig controls={controls} />
@@ -39,15 +49,26 @@ export default function Globe() {
         <Land />
         <Cables />
         <Route />
-        <Nodes labels={labels} />
+        <Landings />
+        <Nodes labels={labels} items={items} />
         <Traffic />
         {/* no wheel zoom: the globe fills most of the viewport and must not trap page scrolling */}
         <OrbitControls ref={controls} enablePan={false} enableZoom={false} enableDamping rotateSpeed={0.5} />
       </Canvas>
+      {/* place names are decoration (the phones and the Rota panel say them); cable names open the cable's card */}
       <div className={styles.labels} aria-hidden="true">
-        {LABELED.map((n, i) => (
-          <div key={n.id} ref={(el) => { labels.current[i] = el; }} className={styles.anchor}>
-            <span className={onRoute.has(n.id) ? styles.label : `${styles.label} ${styles.labelDim}`}>{n.name}</span>
+        {items.map((n, i) => n.kind !== 'cable' && (
+          <div key={n.key} ref={(el) => { labels.current[i] = el; }} className={styles.anchor} data-kind={n.kind}>
+            <span className={labelClass(n, onRoute.has(n.id))}>{n.text}</span>
+          </div>
+        ))}
+      </div>
+      <div className={styles.labels}>
+        {items.map((n, i) => n.kind === 'cable' && (
+          <div key={n.key} ref={(el) => { labels.current[i] = el; }} className={styles.anchor} data-kind={n.kind}>
+            <button type="button" className={styles.cableLabel} onClick={() => selectCable(n.id)} aria-label={`Ficha do cabo ${n.text}`}>
+              {n.text}
+            </button>
           </div>
         ))}
       </div>

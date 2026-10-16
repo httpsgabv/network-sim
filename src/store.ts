@@ -1,6 +1,5 @@
 import { create } from 'zustand';
-import { CABLES } from './data/cables';
-import { NODES } from './data/nodes';
+import { NETWORK_CABLES, NETWORK_NODES } from './data/network';
 import { END, STAGE_START, STAGES, plan, type Plan } from './sim/engine';
 import { MTU, type Transmission } from './sim/pipeline';
 import { findRoute, msPerTick, routeKm, type Route } from './sim/route';
@@ -11,7 +10,7 @@ const routes = new Map<string, Route>();
 export function routeFor(origin: string, destination: string): Route {
   const key = `${origin}>${destination}`;
   let r = routes.get(key);
-  if (!r) routes.set(key, (r = findRoute(NODES, CABLES, origin, destination)));
+  if (!r) routes.set(key, (r = findRoute(NETWORK_NODES, NETWORK_CABLES, origin, destination)));
   return r;
 }
 
@@ -22,7 +21,7 @@ export const KINDS = {
   video: { count: 48, label: 'Vídeo' },
 } as const;
 export type Kind = keyof typeof KINDS;
-export type Panel = 'events' | 'packet';
+export type Panel = 'events' | 'packet' | 'route';
 
 export interface Payload {
   kind: Kind;
@@ -63,6 +62,9 @@ interface SimState {
   /** Middle detail card: the event log, or the packet picked in a queue. */
   panel: Panel;
   setPanel(panel: Panel): void;
+  /** Submarine cable whose card is open in the Rota panel (a cables.json id), or none. */
+  selectedCable: string | null;
+  selectCable(id: string | null): void;
   /** Packet size used for the next send (SPEC criterion 4: 256 B – 8 KB). */
   mtu: number;
   selected: number;
@@ -88,7 +90,7 @@ const clampT = (t: number) => Math.max(0, Math.min(END, t));
 
 // With reduced motion the user starts playback themselves instead of it autoplaying.
 const route0 = routeFor('sao', 'tyo');
-const initial = { origin: 'sao', destination: 'tyo', route: route0, msPerTick: msPerTick(routeKm(route0)), t: 0, playing: !prefersReducedMotion(), speed: 1, kind: 'photo' as Kind, loss: 0.12, mtu: MTU, selected: 5, transfer: null, panel: 'events' as Panel };
+const initial = { origin: 'sao', destination: 'tyo', route: route0, msPerTick: msPerTick(routeKm(route0)), t: 0, playing: !prefersReducedMotion(), speed: 1, kind: 'photo' as Kind, loss: 0.12, mtu: MTU, selected: 5, transfer: null, panel: 'events' as Panel, selectedCable: null as string | null };
 
 export const useSim = create<SimState>()((set, get) => ({
   ...initial,
@@ -134,5 +136,7 @@ export const useSim = create<SimState>()((set, get) => ({
   // picking a packet anywhere opens its details in the middle card
   select: (seq) => set({ selected: Math.max(0, Math.min(seq, get().plan.packets.length - 1)), panel: 'packet' }),
   setPanel: (panel) => set({ panel }),
+  // picking a cable anywhere (list or globe) opens its card in the Rota panel
+  selectCable: (id) => set(id ? { selectedCable: id, panel: 'route' } : { selectedCable: null }),
   reset: () => set({ ...initial, plan: build(KINDS[initial.kind].count, initial.loss) }),
 }));

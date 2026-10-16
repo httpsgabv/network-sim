@@ -1,45 +1,88 @@
 import { describe, expect, it } from 'vitest';
-import { findRoute, msPerTick, routeKm } from '../src/sim/route';
-import { NODES } from '../src/data/nodes';
-import { CABLES } from '../src/data/cables';
+import { findRoute, msPerTick, routeKm, TERRESTRIAL_DETOUR } from '../src/sim/route';
+import { CITIES } from '../src/data/nodes';
+import { NETWORK_CABLES, NETWORK_NODES, cableName, nodeById } from '../src/data/network';
+import { CABLE_DATA } from '../src/data/cableData';
+import type { Cable } from '../src/data/cables';
+import type { NetNode } from '../src/data/nodes';
 
-const route = findRoute(NODES, CABLES, 'sao', 'tyo');
-const close = (a: readonly [number, number], b: readonly [number, number]) =>
-  Math.abs(a[0] - b[0]) < 1e-6 && Math.abs(a[1] - b[1]) < 1e-6;
+const route = (a: string, b: string) => findRoute(NETWORK_NODES, NETWORK_CABLES, a, b);
+const oneWayMs = (a: string, b: string) => 100 * msPerTick(routeKm(route(a, b)));
+const spTyo = route('sao', 'tyo');
+const submarine = new Set(CABLE_DATA.cables.map((c) => c.id));
+const landing = new Set(Object.keys(CABLE_DATA.landings));
 
-describe('findRoute', () => {
-  it('finds the shortest SP → Tóquio path: Brazil → US backbone → Japan', () => {
-    expect(route.hops).toEqual(['sao', 'fza', 'mia', 'vab', 'nyc', 'lax', 'ore', 'tyo']);
-    expect(route.legs.map((l) => l.cable)).toContain('us-transcon');
-  });
-
-  it('total length is plausible for that path', () => {
-    expect(routeKm(route)).toBeGreaterThan(22000);
-    expect(routeKm(route)).toBeLessThan(23500);
-  });
-
-  it('São Paulo → Los Angeles crosses the US backbone, not Europe and Asia', () => {
-    const r = findRoute(NODES, CABLES, 'sao', 'lax');
-    expect(r.hops).toContain('nyc');
-    expect(routeKm(r)).toBeLessThan(15000);
-  });
-
-  it('every pair of pickable cities has a route (210 ordered pairs)', () => {
-    const cities = NODES.filter((n) => n.kind !== 'landing');
-    expect(cities).toHaveLength(15);
-    for (const a of cities) for (const b of cities) if (a !== b) expect(() => findRoute(NODES, CABLES, a.id, b.id)).not.toThrow();
-  });
-
-  it('works in reverse and between any two nodes', () => {
-    expect(findRoute(NODES, CABLES, 'tyo', 'sao').hops.at(-1)).toBe('sao');
-    for (const a of NODES) for (const b of NODES) {
-      if (a.id !== b.id) expect(findRoute(NODES, CABLES, a.id, b.id).hops.length).toBeGreaterThanOrEqual(2);
+describe('findRoute on the real network (TeleGeography 2022 + backhaul)', () => {
+  it('every pair of pickable cities has a route that starts and ends at the cities', () => {
+    expect(CITIES).toHaveLength(15);
+    for (const a of CITIES) for (const b of CITIES) {
+      if (a === b) continue;
+      const r = route(a.id, b.id);
+      expect(r.hops[0]).toBe(a.id);
+      expect(r.hops.at(-1)).toBe(b.id);
     }
   });
 
-  it('throws for unknown or unreachable nodes', () => {
-    expect(() => findRoute(NODES, CABLES, 'sao', 'nope')).toThrow();
-    expect(() => findRoute([...NODES, { id: 'ilha', name: 'Ilha', kind: 'cdn', at: [0, 0] }], CABLES, 'sao', 'ilha')).toThrow();
+  it('every leg is either a real cable between two real landings, or a land link', () => {
+    for (const a of CITIES) for (const b of CITIES) {
+      if (a === b) continue;
+      for (const leg of route(a.id, b.id).legs) {
+        if (submarine.has(leg.cable)) {
+          expect(landing.has(leg.a) && landing.has(leg.b), `${leg.cable}: ${leg.a} → ${leg.b}`).toBe(true);
+        } else {
+          expect(NETWORK_CABLES.find((c) => c.id === leg.cable)?.kind, leg.cable).toBe('terrestrial');
+        }
+      }
+    }
+  });
+
+  it('São Paulo → Tóquio crosses at least two oceans on real cables', () => {
+    const cables = spTyo.legs.filter((l) => submarine.has(l.cable));
+    expect(cables.length).toBeGreaterThanOrEqual(2);
+    for (const l of cables) expect(cableName(l.cable)).not.toBe(l.cable); // names come from the dataset
+  });
+
+  it('one-way latency is in line with real measurements', () => {
+    expect(oneWayMs('sao', 'tyo')).toBeGreaterThan(110);
+    expect(oneWayMs('sao', 'tyo')).toBeLessThan(160);
+    expect(oneWayMs('lon', 'fra')).toBeLessThan(10);
+    expect(oneWayMs('sao', 'mia')).toBeGreaterThan(35);
+    expect(oneWayMs('sao', 'mia')).toBeLessThan(60);
+  });
+
+  it('throws for unknown nodes', () => {
+    expect(() => route('sao', 'nope')).toThrow();
+  });
+});
+
+describe('findRoute (small graph)', () => {
+  const n = (id: string, at: [number, number]): NetNode => ({ id, name: id, kind: 'cdn', at });
+  const nodes = [n('a', [0, 0]), n('b', [0, 10]), n('c', [0, 20]), n('d', [10, 10]), n('island', [-40, 0])];
+  const sea = (id: string, path: Cable['path']): Cable => ({ id, name: id, kind: 'submarine', path });
+
+  it('picks the shortest path, not the fewest hops', () => {
+    const cables = [sea('direct-detour', ['a', [30, 10], 'c']), sea('ab', ['a', 'b']), sea('bc', ['b', 'c'])];
+    expect(findRoute(nodes, cables, 'a', 'c').hops).toEqual(['a', 'b', 'c']);
+  });
+
+  it('charges land links the detour factor, so equal sea beats land', () => {
+    const cables: Cable[] = [
+      sea('sea', ['a', 'b']),
+      { id: 'land', name: 'land', kind: 'terrestrial', path: ['a', 'b'] },
+    ];
+    expect(findRoute(nodes, cables, 'a', 'b').legs[0].cable).toBe('sea');
+    const landOnly = findRoute(nodes, [cables[1]], 'a', 'b');
+    expect(landOnly.length).toBeCloseTo(findRoute(nodes, [cables[0]], 'a', 'b').length * TERRESTRIAL_DETOUR, 9);
+  });
+
+  it('a cable path with waypoints is one leg between its two nodes', () => {
+    const r = findRoute(nodes, [sea('bent', ['a', [5, 5], 'b']), sea('bd', ['b', 'd'])], 'a', 'd');
+    expect(r.hops).toEqual(['a', 'b', 'd']);
+    expect(r.legs[0].points).toHaveLength(3);
+  });
+
+  it('throws when unreachable', () => {
+    expect(() => findRoute(nodes, [sea('ab', ['a', 'b'])], 'a', 'island')).toThrow();
   });
 });
 
@@ -48,48 +91,45 @@ describe('msPerTick', () => {
     expect(msPerTick(20000)).toBeCloseTo(2 * msPerTick(10000), 12);
   });
 
-  it('a 100-tick transit takes the fibre time: 22,762 km ≈ 114 ms one-way', () => {
-    expect(100 * msPerTick(routeKm(route))).toBeCloseTo(114, -1);
-  });
-
   it('London → Frankfurt is far quicker than São Paulo → Tóquio', () => {
-    const short = routeKm(findRoute(NODES, CABLES, 'lon', 'fra'));
-    expect(msPerTick(short)).toBeLessThan(msPerTick(routeKm(route)) / 10);
+    expect(oneWayMs('lon', 'fra')).toBeLessThan(oneWayMs('sao', 'tyo') / 10);
   });
 });
 
 describe('route.posAt', () => {
-  it('starts at the origin and ends at the destination, on the ground', () => {
-    const start = route.posAt(0), end = route.posAt(1);
-    expect(close(start.at, [-23.55, -46.63])).toBe(true);
-    expect(close(end.at, [35.68, 139.69])).toBe(true);
-    expect(start.h).toBe(0);
-    expect(end.h).toBeCloseTo(0, 9);
+  const close = (a: readonly [number, number], b: readonly [number, number]) =>
+    Math.abs(a[0] - b[0]) < 1e-6 && Math.abs(a[1] - b[1]) < 1e-6;
+
+  it('starts at the origin and ends at the destination', () => {
+    expect(close(spTyo.posAt(0).at, nodeById.get('sao')!.at)).toBe(true);
+    expect(close(spTyo.posAt(1).at, nodeById.get('tyo')!.at)).toBe(true);
   });
 
-  it('hops arc above the surface: zero at each node, peak mid-leg', () => {
-    for (const leg of route.legs) {
-      const mid = route.posAt((leg.from + leg.length / 2) / route.length);
-      expect(mid.h, leg.cable).toBeGreaterThan(0);
-      expect(mid.h).toBeLessThanOrEqual(0.09);
-      expect(route.posAt(leg.from / route.length).h).toBeCloseTo(0, 9);
-    }
+  it('packets ride on the cable: no altitude anywhere', () => {
+    for (let i = 0; i <= 200; i++) expect(spTyo.posAt(i / 200).h).toBe(0);
   });
 
   it('reports which leg a position is on, and clamps out-of-range input', () => {
-    expect(route.posAt(0.5).leg).toBeGreaterThan(0);
-    expect(route.posAt(-1)).toEqual(route.posAt(0));
-    expect(route.posAt(2)).toEqual(route.posAt(1));
+    expect(spTyo.posAt(0.5).leg).toBeGreaterThan(0);
+    expect(spTyo.posAt(-1)).toEqual(spTyo.posAt(0));
+    expect(spTyo.posAt(2)).toEqual(spTyo.posAt(1));
   });
 
   it('progress is continuous (no jumps between samples)', () => {
-    let prev = route.posAt(0).at;
-    for (let i = 1; i <= 500; i++) {
-      const cur = route.posAt(i / 500).at;
+    let prev = spTyo.posAt(0).at;
+    for (let i = 1; i <= 1000; i++) {
+      const cur = spTyo.posAt(i / 1000).at;
       const dLat = cur[0] - prev[0];
-      const dLon = ((cur[1] - prev[1] + 540) % 360) - 180;
+      const dLon = (((cur[1] - prev[1] + 540) % 360) - 180) * Math.cos((cur[0] * Math.PI) / 180);
       expect(Math.hypot(dLat, dLon)).toBeLessThan(2);
       prev = cur;
     }
+  });
+
+  it('time on a land leg is stretched by the detour factor (fibre km, not straight km)', () => {
+    const land = spTyo.legs.find((l) => !submarine.has(l.cable))!;
+    expect(land).toBeDefined();
+    const geometric = land.cum.at(-1)!;
+    expect(land.length).toBeCloseTo(geometric * TERRESTRIAL_DETOUR, 9);
   });
 });

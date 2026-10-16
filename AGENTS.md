@@ -22,6 +22,7 @@ npm run coverage   # src/sim/ precisa de ≥ 90% de linhas
 npm run lint       # tsc --noEmit + ESLint (inclui as regras do React Compiler)
 npm run build
 npm run data:land  # regenera src/data/landDots.json a partir do world-atlas
+npm run data:cables # regenera src/data/cables.json (TeleGeography 2022, CC BY-NC-SA 3.0; SHA-256 fixo)
 ```
 
 Antes de dizer "pronto": `npm test` e `npm run lint` verdes. `npm run build` quando mexer em dependências, CSS global ou imports.
@@ -34,12 +35,14 @@ src/sim/      núcleo PURO, sem React/three/DOM. Tudo testado.
   queues      senderLayout (fila de A) / receiverLayout (buffer de B)
   pipeline    transmit(): cifra → fatia → remonta → decifra, com os bytes reais
   route, geo, packetize, crypto, checksum, prng
-src/lib/      cola entre sim e UI (hooks, actors, fragments, useFlip, payload)
-src/store.ts  zustand: t, playing, speed, kind, loss, mtu, origin, destination, route, msPerTick, selected, panel, transfer
+src/data/     cidades (nodes), backbones + backhaul (cables), cables.json gerado (cableData), grafo roteável (network)
+scripts/      geradores de dados; scripts/lib/ é puro e testado (o Node 26 roda .ts direto)
+src/lib/      cola entre sim e UI (hooks, actors, fragments, useFlip, payload, describe, globe)
+src/store.ts  zustand: t, playing, speed, kind, loss, mtu, origin, destination, route, msPerTick, selected, panel, selectedCable, transfer
 src/components/
   Globe/      R3F. Lê o store com getState() dentro de useFrame, nunca re-renderiza por tick
   Chat/       telefones A e B
-  Cards/      Queues (fila A, buffer B), Details (linha de detalhes + FLIP), Inspector, EventLog
+  Cards/      Queues (fila A, buffer B), Details (linha de detalhes + FLIP), Inspector, EventLog, RouteLegs, CableCard
   Dock/       reprodução (Dock) e cenário na barra superior (NetworkControls, RoutePicker)
   ui/         primitivos no formato do shadcn sobre Radix (Select), estilizados com os tokens
 ```
@@ -132,7 +135,7 @@ Já erramos duas vezes (v2 neon; v6 com azul/lilás). **Não faça:**
 ## 7. Animação
 
 - Tudo deriva de `t`. Velocidade 1× ≈ 13,5 s por envio.
-- Globo: pacotes em **arco** entre nós (altitude ∝ sin πf), **rastros**, × vermelho com anel na perda, SACK âmbar voltando, retransmissão âmbar, pulsos brancos em A (envio) e B (entrega), câmera seguindo a mediana dos pacotes, drift lento.
+- Globo: pacotes **sobre o traçado real do cabo** (sem arco; `posAt().h` é sempre 0), malha mundial de cabos numa draw call só (nada de um `<Line>` por cabo), cabos da rota realçados, **rastros**, × vermelho com anel na perda, SACK âmbar voltando, retransmissão âmbar, pulsos brancos em A (envio) e B (entrega), câmera seguindo a mediana dos pacotes, drift lento.
 - Filas: FLIP via `useFlip`, com posições de **layout** (`offsetLeft/Top`), nunca `getBoundingClientRect`, que inclui o transform da animação e causa saltos.
 - Imagem nas filas: com baixa opacidade; cinza enquanto cifrada (em A sempre, em B até decifrar); racha em pedaços durante a criptografia.
 - `prefers-reduced-motion`: sem autoplay, sem drift, pulsos, rastros ou marching dots; a câmera corta (não faz pan); o FLIP não anima.
@@ -152,4 +155,5 @@ Já erramos duas vezes (v2 neon; v6 com azul/lilás). **Não faça:**
 - **Validação no browser só quando pedida.** O usuário prefere economizar tokens; quando não houver validação visual, diga isso explicitamente no fim.
 - Interface e textos em **pt-BR**. Código, nomes e comentários em inglês, comentando o *porquê*.
 - Dependências novas: **perguntar antes.** Nada de requisição de rede com conteúdo do usuário; arquivos do usuário nunca saem do navegador.
+- **Licença dos cabos (CC BY-NC-SA 3.0):** o crédito `DataCredit` fica sempre visível; o projeto é **não comercial** enquanto incluir `cables.json`; nada de buscar a API atual do TeleGeography (não tem licença aberta). Trocar a fonte de dados: perguntar antes.
 - Simplificações conscientes levam um comentário `ponytail:` dizendo o limite e como evoluir.

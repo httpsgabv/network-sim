@@ -11,10 +11,13 @@ import styles from './Cards.module.css';
 import { EventLog } from './EventLog';
 import { Inspector } from './Inspector';
 import { IncomingBuffer, OutgoingQueue } from './Queues';
+import { CableCard } from './CableCard';
+import { RouteLegs } from './RouteLegs';
 
 const PANELS = [
   { value: 'events', label: 'Eventos' },
   { value: 'packet', label: 'Pacote' },
+  { value: 'route', label: 'Rota' },
 ] as const satisfies readonly { value: Panel; label: string }[];
 
 /**
@@ -32,6 +35,7 @@ export function Details({ className }: { className?: string }) {
   const select = useSim((s) => s.select);
   const panel = useSim((s) => s.panel);
   const setPanel = useSim((s) => s.setPanel);
+  const selectedCable = useSim((s) => s.selectedCable);
   const actor = actorAt(snap.t).key;
 
   const sent = senderLayout(plan, snap.t);
@@ -47,7 +51,9 @@ export function Details({ className }: { className?: string }) {
       <OutgoingQueue {...common} items={sent} active={actor === 'A'} />
       <section aria-label="Detalhes" className={`${styles.card} ${styles.middle}`}>
         <Segmented label="Painel de detalhes" options={PANELS} value={panel} onChange={setPanel} />
-        {panel === 'events' ? <EventLog embedded /> : <Inspector embedded />}
+        {panel === 'events' ? <EventLog embedded />
+          : panel === 'packet' ? <Inspector embedded />
+            : selectedCable ? <CableCard id={selectedCable} /> : <RouteLegs />}
       </section>
       <IncomingBuffer {...common} layout={received} active={actor === 'B'} />
     </div>

@@ -1,0 +1,39 @@
+.back {
+  align-self: flex-start;
+  min-height: 32px;
+  padding: 0 10px 0 6px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--fg-muted);
+  font-size: 12px;
+  cursor: pointer;
+}
+.back:hover { background: #27272a; color: var(--fg); }
+.back:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+
+.head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 6px 8px; }
+.name { margin: 0; font-size: 18px; font-weight: 500; letter-spacing: -0.02em; }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+/* on / off the route, planned: told apart by solid vs dashed outline, never by colour */
+.chip {
+  font: 400 10px var(--font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--fg);
+  color: var(--fg);
+}
+.dashed { border-style: dashed; border-color: var(--fg-subtle); color: var(--fg-muted); }
+
+.rows { margin: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 14px; }
+.rows dt, .label { margin: 0; font-size: 10px; font-weight: 400; color: var(--fg-subtle); text-transform: uppercase; letter-spacing: 0.06em; }
+.rows dd { margin: 1px 0 0; font: 400 12px var(--font-mono); }
+.owners { margin: 2px 0 0; font-size: 12px; line-height: 1.5; color: #e4e4e7; }
+
+.stations { margin: 4px 0 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 4px; }
+.stations li { font-size: 11px; padding: 2px 8px; border-radius: 6px; border: 1px solid var(--border); color: var(--fg-muted); }
+.stations li[data-on-route='true'] { border-color: var(--fg); color: var(--fg); }
+
+.source { margin: 0; font: 400 10px var(--font-mono); color: var(--fg-subtle); }

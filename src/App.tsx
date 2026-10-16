@@ -5,6 +5,7 @@ import { ReceiverPhone } from './components/Chat/ReceiverPhone';
 import { SenderPhone } from './components/Chat/SenderPhone';
 import { Dock, NetworkControls } from './components/Dock/Dock';
 import { RoutePicker } from './components/Dock/RoutePicker';
+import { DataCredit } from './components/DataCredit';
 import { Hud } from './components/Hud';
 import { Segmented } from './components/Segmented';
 import { StageHeader } from './components/StageHeader';
@@ -66,6 +67,7 @@ export default function App() {
               </Suspense>
             </div>
             <Dock />
+            <DataCredit />
           </section>
           <ReceiverPhone />
         </div>

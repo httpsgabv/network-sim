@@ -1,7 +1,8 @@
 import { useFrame } from '@react-three/fiber';
 import { useMemo, type RefObject } from 'react';
 import { Vector3 } from 'three';
-import { NODES } from '../../data/nodes';
+import { CITIES } from '../../data/nodes';
+import { globeLabels, type GlobeLabel } from '../../lib/describe';
 import { toVector } from '../../lib/globe';
 import { useSim } from '../../store';
 
@@ -11,12 +12,15 @@ export function useOnRoute() {
   return useMemo(() => new Set(route.hops), [route]);
 }
 
-/** Nodes that get a marker and a label (landing stations are routing-only). */
-export const LABELED = NODES.filter((n) => n.kind !== 'landing').map((n) => ({
-  ...n,
-  position: toVector(n.at, 1.004),
-}));
+export type PlacedLabel = GlobeLabel & { position: Vector3 };
 
+/** Cities, plus the route's landing stations and cable names; recomputed only when the route changes. */
+export function useGlobeLabels(): PlacedLabel[] {
+  const route = useSim((s) => s.route);
+  return useMemo(() => globeLabels(route).map((l) => ({ ...l, position: toVector(l.at, 1.004) })), [route]);
+}
+
+const CITY_MARKERS = CITIES.map((c) => ({ id: c.id, position: toVector(c.at, 1.004) }));
 const eye = new Vector3(), projected = new Vector3();
 
 function Marker({ position, active }: { position: Vector3; active: boolean }) {
@@ -36,27 +40,31 @@ function Marker({ position, active }: { position: Vector3; active: boolean }) {
 }
 
 /**
- * Markers live in the scene; labels are plain DOM in an overlay (see Globe.tsx) that this
+ * City markers live in the scene; labels are plain DOM in an overlay (see Globe.tsx) that this
  * component positions every frame. One React root instead of one per label (drei <Html>).
  */
-export function Nodes({ labels }: { labels: RefObject<(HTMLDivElement | null)[]> }) {
+export function Nodes({ labels, items }: { labels: RefObject<(HTMLDivElement | null)[]>; items: PlacedLabel[] }) {
   const onRoute = useOnRoute();
   useFrame(({ camera, size }) => {
     eye.copy(camera.position).normalize();
-    LABELED.forEach((n, i) => {
+    items.forEach((n, i) => {
       const el = labels.current?.[i];
       if (!el) return;
       const facing = projected.copy(n.position).normalize().dot(eye);
       projected.copy(n.position).project(camera);
       const x = ((projected.x + 1) / 2) * size.width, y = ((1 - projected.y) / 2) * size.height;
       el.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`;
-      el.style.opacity = String(Math.max(0, Math.min(1, (facing - 0.3) * 5)) * (onRoute.has(n.id) ? 1 : 0.75));
+      const dim = n.kind === 'city' && !onRoute.has(n.id) ? 0.75 : 1;
+      const opacity = Math.max(0, Math.min(1, (facing - 0.3) * 5)) * dim;
+      el.style.opacity = String(opacity);
+      // behind the globe: not clickable or focusable either (cable names are buttons)
+      el.style.visibility = opacity > 0.05 ? 'visible' : 'hidden';
     });
   });
 
   return (
     <>
-      {LABELED.map((n) => (
+      {CITY_MARKERS.map((n) => (
         <Marker key={n.id} position={n.position} active={onRoute.has(n.id)} />
       ))}
     </>

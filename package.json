@@ -11,7 +11,8 @@
     "test:watch": "vitest",
     "lint": "tsc --noEmit && eslint .",
     "coverage": "vitest run --coverage",
-    "data:land": "node scripts/build-land-dots.mjs"
+    "data:land": "node scripts/build-land-dots.mjs",
+    "data:cables": "node scripts/build-cables.ts"
   },
   "dependencies": {
     "@radix-ui/react-select": "^2.4.1",

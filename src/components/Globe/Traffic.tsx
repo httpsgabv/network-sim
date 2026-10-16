@@ -8,7 +8,7 @@ import {
   DynamicDrawUsage,
   type ShaderMaterial,
 } from 'three';
-import { nodeById } from '../../data/nodes';
+import { nodeById } from '../../data/network';
 import { toXYZ } from '../../lib/globe';
 import { useReducedMotion } from '../../lib/useReducedMotion';
 import { STAGE_START, END } from '../../sim/engine';
