@@ -29,7 +29,8 @@ export const PROFILES: Record<ProfileId, Profile> = {
     title: '4G oscilando · 2–12 Mbps',
     bwMbps: (x, seed) => Math.min(12, Math.max(2, 6.5 + 4.2 * Math.sin(x / 2.4) + 3 * (noise(Math.floor(x * 2), seed) - 0.5))),
   },
-  drop: { label: 'Queda', title: 'Queda no meio · 20 → 1,5 → 20 Mbps', bwMbps: (x) => (x >= 10 && x < 20 ? 1.5 : 20) },
+  // 4–14 s, not 10–20 s: at the top rung dash.js buffers up to 30 s, so by 10 s a 30 s video is fully downloaded (T10.3).
+  drop: { label: 'Queda', title: 'Queda · 20 → 1,5 Mbps entre 4 s e 14 s', bwMbps: (x) => (x >= 4 && x < 14 ? 1.5 : 20) },
   // 12 s, not 5: a ~10 s buffer covers a 5 s tunnel and nothing would stall (seen in mockup v9).
   tunnel: { label: 'Túnel', title: 'Túnel · 8 Mbps, 12 s quase sem sinal', bwMbps: (x) => (x >= 10 && x < 22 ? 0.1 : 8) },
 };

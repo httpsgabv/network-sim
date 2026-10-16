@@ -51,7 +51,7 @@ Mesmo contrato do modo atual: `planStream(config)` + `streamSnapshot(plan, t)`; 
 Funções de banda por segundo, sem aleatoriedade além da seed:
 - **Fibra estável**: 50 Mbps.
 - **4G oscilando**: 2–12 Mbps, senoide + ruído com seed.
-- **Queda no meio**: 20 Mbps → 1,5 Mbps entre 10 s e 20 s → 20 Mbps.
+- **Queda**: 20 Mbps → 1,5 Mbps entre **4 s e 14 s** → 20 Mbps. Aos 10 s o vídeo de 30 s já estaria todo no buffer (teto de 30 s em 1080p, T10.3).
 - **Túnel**: 8 Mbps, cai a 0,1 Mbps por 12 s (de 10 s a 22 s), volta. Com 5 s o buffer de ~10 s cobria a queda e nada travava (visto no mockup v9).
 
 ### Mídia real: `src/lib/media/` (navegador, fora do `sim`)
@@ -155,4 +155,6 @@ export function throughputPick(ladder: Rendition[], measuredKbps: number): numbe
 8. **Outras regras ligadas por padrão no dash.js** (2026-10-16): **entram as duas**, para ser fiel ao dash.js.
    - **SwitchHistoryRule**: janela de 8 decisões; se uma qualidade cai demais (quedas / não-quedas > 7,5 %), limita à qualidade abaixo dela.
    - **AbandonRequestsRule**: durante o download, se a previsão passar de 1,8 × a duração do segmento, abandona e pede de novo numa qualidade que a banda aguenta. No máximo uma vez por segmento.
-   - Novos eventos: `abandon` (com bytes desperdiçados) e `history-cap`. A Escada mostra o segmento abandonado como célula tracejada na qualidade original.
+   - Novo evento `abandon` (com os bytes desperdiçados). O limite do histórico aparece como motivo `switch-history` do pedido. A Escada mostra o segmento abandonado como célula tracejada na qualidade original.
+
+9. **Horário da Queda** (2026-10-16): 4 s a 14 s, como proposto depois da T10.3.

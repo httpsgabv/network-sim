@@ -13,9 +13,9 @@ describe('network profiles (Kenji’s last mile, Mbps)', () => {
     expect(range(0, 60).every((x) => PROFILES.fiber.bwMbps(x, 7) === 50)).toBe(true);
   });
 
-  it('drop: 20 → 1.5 between 10 s and 20 s → 20', () => {
+  it('drop: 20 → 1.5 between 4 s and 14 s → 20', () => {
     const bw = (x: number) => PROFILES.drop.bwMbps(x, 7);
-    expect([bw(0), bw(9.99), bw(10), bw(19.99), bw(20), bw(40)]).toEqual([20, 20, 1.5, 1.5, 20, 20]);
+    expect([bw(0), bw(3.99), bw(4), bw(13.99), bw(14), bw(40)]).toEqual([20, 20, 1.5, 1.5, 20, 20]);
   });
 
   it('tunnel: 8 Mbps, 0.1 Mbps from 10 s to 22 s', () => {

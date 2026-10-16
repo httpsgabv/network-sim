@@ -31,7 +31,7 @@ Plano: [plan.md](plan.md). TDD em `src/sim/stream/`. Validação no browser só 
     - **Sem crescer a janela quando a aplicação é que limita** (`tcp_is_cwnd_limited`); acontece na última rodada de cada segmento.
     - Crescimento Reno (+1/RTT) no lugar do cúbico, com o mesmo β = 0,7 (`ponytail:`).
   - Aceite:
-    - `profiles.ts`: Fibra (50 Mbps), 4G (2–12 Mbps, ruído com seed), Queda (20 → 1,5 → 20 entre 10 s e 20 s) e Túnel (8 Mbps, 0,1 Mbps de 10 s a 22 s), como funções puras `bw(x, seed)`.
+    - `profiles.ts`: Fibra (50 Mbps), 4G (2–12 Mbps, ruído com seed), Queda (20 → 1,5 → 20 entre 4 s e 14 s, mudança da T10.3) e Túnel (8 Mbps, 0,1 Mbps de 10 s a 22 s), como funções puras `bw(x, seed)`.
     - `tcp.ts`: `round(state, { bwBps, rtt, mss, loss, rand })`. A entrega por rodada é `min(cwnd × MSS, banda × RTT, restante)`. Tem slow start, `ssthresh`, CUBIC simplificado com β = 0,7 (comentário `ponytail:` com o limite) e perda por PRNG ou por estouro da fila (> 2 × BDP + 4 MSS), com +1 RTT de SACK/reenvio. `afterIdle(state, idle, rto)` volta a `initcwnd = 10` (RFC 6928 / RFC 7661). Toda rodada entrega pelo menos 1/4 de MSS.
   - Testes: a cwnd dobra por RTT no slow start; uma perda corta para 0,7; a banda limita a entrega; a ociosidade > RTO reinicia a cwnd; mesma seed → mesmas perdas; banda de 0,05 Mbps com 5 % de perda termina
   - Verificar: `npm test -- stream/tcp stream/profiles`
@@ -53,7 +53,33 @@ Plano: [plan.md](plan.md). TDD em `src/sim/stream/`. Validação no browser só 
   - Testes: casos com as mesmas entradas e saídas do dash.js (tirados do código ou dos testes dele) para cada regra; a troca Dynamic respeita a histerese nos dois sentidos; o mínimo entre as regras; o abandono acontece no máximo uma vez por segmento e nunca na menor qualidade
   - Verificar: `npm test -- stream/abr`
   - Arquivos: `src/sim/stream/{abr,ewma}.ts`, `tests/stream/{abr,ewma}.test.ts`
-- [ ] **T10.3 `planStream` + `streamSnapshot` + QoE**
+- [x] **T10.3 `planStream` + `streamSnapshot` + QoE** (2026-10-16)
+  - Feito:
+    - `types.ts`: `StreamConfig`, `Attempt` (uma por pedido HTTP; o abandono gera outra), `StreamEvent` tipado (sem texto), `Sample`, `StreamPlan`, `StreamSnapshot`.
+    - `engine.ts`: `planStream`, `streamSnapshot`, `nominalSizes` (±18 % VBR com seed). O passo é de 10 ms e as amostras, de 100 ms.
+    - O agendador do dash.js pede quando `buffer + 2 s < alvo` e reconfere a cada 500 ms (`scheduling.defaultTimeout`). O BOLA pode pedir espera (`bola-wait`).
+    - O throughput é medido do 1º ao último byte (Resource Timing).
+    - O abandono é checado a cada rodada de RTT.
+    - `qoe.ts`: `qoeAt(plan, t)`.
+    - 19 testes; `src/sim/stream/` com 100 % de linhas.
+  - Critérios 1, 2 e 8 viraram testes e passam:
+    - Fibra começa em 0,84 s e chega a 1080p no 3º segmento.
+    - O Túnel trava 7,8 s, abandona o 1080p, cai para 240p e volta para 480p.
+  - Checkpoint (SP → Tóquio, borda HK; RTT borda 40 ms, origem 259 ms; ᵇ BOLA, ⁱ InsufficientBuffer, ᵃ abandono, ✗ abandonado):
+
+    | Perfil | Perda | Início | Travadas | Média | Sequência |
+    |---|---|---|---|---|---|
+    | Fibra | 0 % | 0,84 s | 0 | 4,55 Mbps | 240 720 1080 … 1080ᵇ |
+    | Fibra | 1 % | 1,20 s | 0 | 1,41 Mbps | 240 240 480 … 480ᵇ 720ᵇ 720ᵇ 720ᵇ |
+    | 4G | 0 % | 0,88 s | 0 | 2,27 Mbps | 240 720 1080 ×4 (1080✗) 480ᵃ 480ⁱ … |
+    | Queda (10–20 s) | 0 % | 0,84 s | 0 | 4,55 Mbps | igual à Fibra: **o vídeo inteiro já está no buffer aos 10 s** |
+    | Túnel | 0 % | 0,84 s | 1 (7,8 s) | 2,25 Mbps | 240 720 1080 ×5 (1080✗) 480ᵃ 240 ×5 480 480 |
+    | qualquer | 5 % | 1,44 s | 0 | 0,40 Mbps | 240 do começo ao fim |
+
+  - Achados:
+    - **Queda aos 10 s não aparece.** O teto de 30 s em 1080p (dash.js) com só 30 s de vídeo faz o player baixar tudo antes. **Resolvido (2026-10-16): a Queda passou para 4 s a 14 s** (20 → 1,5 Mbps), com o resultado 240 720 1080 1080 1080 (1080✗) 480ᵃ 480ⁱ … 720 720 e sem travar.
+    - A "conexão ociosa volta ao slow start" quase não acontece (0–1 vez por sessão). Em 1080p o teto de 30 s cobre o vídeo; ela só aparece abaixo do topo, com teto de 18 s.
+    - Depois de um abandono, os 10 s de "só descer" seguram a qualidade baixa por vários segmentos: a InsufficientBufferRule é a única regra ativa.
   - Aceite:
     - `engine.ts` simula com passo de 10 ms: conexão (1 RTT), TLS (1 RTT), manifesto (miss: + RTT da origem), segmentos com miss + pré-busca de 3 na borda (Decisão 5), buffer com teto, espera ociosa, travada e retomada.
     - `planStream(config)` devolve segmentos, amostras de 100 ms, travadas, cache, perdas, eventos e os limites das 6 etapas.

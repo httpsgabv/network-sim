@@ -9,7 +9,8 @@ import {
   SWITCH_HISTORY_DROP_THRESHOLD, SWITCH_HISTORY_SAMPLE_SIZE, bolaParams,
 } from './dashjs';
 
-export type RuleId = 'throughput' | 'bola' | 'insufficient-buffer' | 'switch-history' | 'none';
+/** 'abandon' only labels the re-request after AbandonRequestsRule fired (no decision is made then). */
+export type RuleId = 'throughput' | 'bola' | 'insufficient-buffer' | 'switch-history' | 'abandon' | 'none';
 
 /** Why a rung was chosen: data only; `lib/describe` turns it into pt-BR text. */
 export interface Reason {
