@@ -32,7 +32,8 @@
 .cell[aria-pressed='true'] { outline: 2px solid var(--fg); outline-offset: 2px; }
 
 .none, .queued { background: var(--surface); color: var(--fg-subtle); border-color: var(--border); }
-.transit { background: var(--fg); color: #09090b; border-color: var(--fg); box-shadow: 0 0 18px #ffffff40; }
+/* same signal as on the globe; #09090b on --transit ≈ 6.5:1 */
+.transit { background: var(--transit); color: #09090b; border-color: var(--transit); }
 .delivered { background: var(--border); color: #e4e4e7; border-color: #3f3f46; }
 .lost { background: #2a0e10; color: #fca5a5; border-color: var(--lost); box-shadow: 0 0 18px #ef444455; }
 .resend { background: #2b1d05; color: #fcd34d; border-color: var(--resend); box-shadow: 0 0 18px #f5a52455; }

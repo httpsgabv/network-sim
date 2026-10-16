@@ -79,3 +79,6 @@ export function nearestCable(mesh: CableMesh, p: Vec3, maxDist: number): string 
   }
   return hit;
 }
+
+/** `--transit` from tokens.css (three.js can't read CSS variables): packets in flight and the route they follow. */
+export const TRANSIT = '#ff4fa3';

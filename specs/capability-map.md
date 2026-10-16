@@ -57,7 +57,8 @@ Specs: **[B]** [simulador-base](simulador-base.md) · **[R]** [origem-destino](o
 | Capacidade | Spec | Como se garante |
 |---|---|---|
 | Acessibilidade (contraste ≥ 4.5:1, nomes, foco, teclado, `reduced-motion`) | B, R | AGENTS.md §8, testes com Testing Library |
-| Design monocromático + 3 cores de sinal | B, R | AGENTS.md §5–6 |
+| Design monocromático + 4 cores de sinal (a 4ª, magenta, é o tráfego no globo) | B, R, C | AGENTS.md §5–6 |
+| Zoom no globo: roda no cockpit, botões +/− sempre | C | `Globe/Globe`, `Globe/ZoomControls` | ✅ |
 | `src/sim/` ≥ 90 % de cobertura | B | `npm run coverage` (hoje 99 % de linhas) |
 
 ## Mapa de dependências entre capacidades

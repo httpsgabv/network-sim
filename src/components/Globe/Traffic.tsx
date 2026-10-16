@@ -9,7 +9,7 @@ import {
   type ShaderMaterial,
 } from 'three';
 import { nodeById } from '../../data/network';
-import { toXYZ } from '../../lib/globe';
+import { toXYZ, TRANSIT } from '../../lib/globe';
 import { useReducedMotion } from '../../lib/useReducedMotion';
 import { STAGE_START, END } from '../../sim/engine';
 import type { Route } from '../../sim/route';
@@ -25,7 +25,7 @@ const SURFACE = 1.004;
 
 const KIND_DOT = 0, KIND_RING = 1, KIND_LOSS = 2;
 const rgb = (hex: string) => new Color(hex).toArray() as [number, number, number];
-const WHITE = rgb('#ffffff'), AMBER = rgb('#f5a524'), RED = rgb('#ef4444');
+const WHITE = rgb('#ffffff'), AMBER = rgb('#f5a524'), RED = rgb('#ef4444'), MAGENTA = rgb(TRANSIT);
 
 const vertex = /* glsl */ `
   attribute float aSize;
@@ -55,9 +55,12 @@ const fragment = /* glsl */ `
     vec2 p = gl_PointCoord - 0.5;
     float d = length(p);
     float a;
+    vec3 color = vColor.rgb;
     if (vKind < 0.5) {
       float halo = smoothstep(0.5, 0.0, d);
       a = halo * halo * 0.55 + smoothstep(0.17, 0.11, d);
+      // white-hot core: a packet still reads as a dot when it sits on a route of its own colour
+      color = mix(color, vec3(1.0), smoothstep(0.1, 0.03, d) * 0.85);
     } else {
       float r = mix(0.08, 0.46, vPhase);
       a = smoothstep(0.03, 0.0, abs(d - r)) * (1.0 - vPhase);
@@ -67,7 +70,7 @@ const fragment = /* glsl */ `
       }
     }
     if (a < 0.01) discard;
-    gl_FragColor = vec4(vColor.rgb, vColor.a * a);
+    gl_FragColor = vec4(color, vColor.a * a);
     #include <colorspace_fragment>
   }
 `;
@@ -147,8 +150,8 @@ export function Traffic() {
       const p = snap.packets[i];
       if (p.pos === null) continue;
       if (p.state === 'transit') {
-        trail(Math.max(0, p.pos - 0.05), p.pos, WHITE, 0.45);
-        at(p.pos, WHITE, 1, 0.032);
+        trail(Math.max(0, p.pos - 0.05), p.pos, MAGENTA, 0.55);
+        at(p.pos, MAGENTA, 1, 0.036);
       } else if (p.state === 'resend') {
         trail(Math.max(0, p.pos - 0.07), p.pos, AMBER, 0.55);
         at(p.pos, AMBER, 1, 0.038);

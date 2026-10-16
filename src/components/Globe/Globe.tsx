@@ -3,7 +3,9 @@ import { Canvas } from '@react-three/fiber';
 import { useRef, useState } from 'react';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import { nodeById } from '../../data/network';
+import { ZOOM_MAX, ZOOM_MIN } from '../../lib/camera';
 import { toVector } from '../../lib/globe';
+import { COCKPIT_QUERY, useMediaQuery } from '../../lib/useReducedMotion';
 import { endpointNames } from '../../lib/describe';
 import { useSim } from '../../store';
 import { Cables } from './Cables';
@@ -15,6 +17,7 @@ import { Nodes, useGlobeLabels, useOnRoute, type PlacedLabel } from './Nodes';
 import { Route } from './Route';
 import { Sphere } from './Sphere';
 import { Traffic } from './Traffic';
+import { ZoomControls } from './ZoomControls';
 
 // Opening view over the origin; the CameraRig takes over from there.
 const startAt = (origin: string) => {
@@ -34,6 +37,7 @@ export default function Globe() {
   const onRoute = useOnRoute();
   const items = useGlobeLabels();
   const selectCable = useSim((s) => s.selectCable);
+  const cockpit = useMediaQuery(COCKPIT_QUERY);
   const route = useSim((s) => s.route);
   const { origin, destination } = endpointNames(route);
   // only the first view: later route changes are the CameraRig's job
@@ -52,8 +56,17 @@ export default function Globe() {
         <Landings />
         <Nodes labels={labels} items={items} />
         <Traffic />
-        {/* no wheel zoom: the globe fills most of the viewport and must not trap page scrolling */}
-        <OrbitControls ref={controls} enablePan={false} enableZoom={false} enableDamping rotateSpeed={0.5} />
+        {/* wheel zoom only in the cockpit: in the stacked layout the wheel must keep scrolling the page */}
+        <OrbitControls
+          ref={controls}
+          enablePan={false}
+          enableZoom={cockpit}
+          minDistance={ZOOM_MIN}
+          maxDistance={ZOOM_MAX}
+          zoomSpeed={0.6}
+          enableDamping
+          rotateSpeed={0.5}
+        />
       </Canvas>
       {/* place names are decoration (the phones and the Rota panel say them); cable names open the cable's card */}
       <div className={styles.labels} aria-hidden="true">
@@ -72,6 +85,7 @@ export default function Globe() {
           </div>
         ))}
       </div>
+      <ZoomControls controls={controls} />
     </div>
   );
 }

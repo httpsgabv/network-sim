@@ -108,6 +108,11 @@ Os mesmos da v1. A lógica pura do script (simplificar, encaixar estação no tr
 
 4. **Fonte efetiva = snapshot de 2022 (2026-10-16)**: o repositório `telegeography/www.submarinecablemap.com` foi apagado. Os dados de hoje só saem pela API do site e não têm licença aberta: a CC BY-SA 4.0 atual do TeleGeography cobre mapas e capturas de tela, e os dados geocodificados são vendidos. Por isso usamos o **zip arquivado no Internet Archive** (commit `54055b5`, arquivos de 2022-08-05, arquivado em 2022-08-16). O `LICENSE` dentro do zip é **CC BY-NC-SA 3.0 Unported** (conferido). O script fixa a URL e o SHA-256 do zip. Limite: a malha é a de 2022; cabos que em 2022 estavam "planejados" (2Africa, SJC2, Grace Hopper, Equiano…) ficam fora (ver pergunta 5).
 
+5. **Ajustes depois da entrega (2026-10-16, pedidos pelo usuário, sem mockup por escolha dele)**:
+   - **Zoom**: roda do mouse só no cockpit (lá a página não rola), mais botões **+/−** no canto do globo em qualquer layout; distância da câmera entre 1,6 e 6 raios. O drift e o acompanhamento da câmera preservam o zoom.
+   - **4ª cor de sinal, `--transit` `#FF4FA3` (magenta)**: pacote em trânsito, o rastro dele e a rota que ele segue no globo. Ciano, azul e lilás foram descartados (AGENTS §6). O núcleo do pacote é branco, para ele não sumir sobre a rota da mesma cor.
+   - **Rota destacada**: mais grossa e em magenta, com marching dots em magenta; os cabos inteiros da rota continuam brancos a 35 %.
+
 ## Perguntas respondidas (2026-10-16)
 
 1. **Licença**: projeto não comercial; `cables.json` publicado sob CC BY-NC-SA, com atribuição na UI.

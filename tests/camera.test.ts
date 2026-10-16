@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { focusAt } from '../src/lib/camera';
+import { focusAt, zoomed, ZOOM_MAX, ZOOM_MIN, ZOOM_STEP } from '../src/lib/camera';
 import { STAGE_START, plan, snapshot } from '../src/sim/engine';
 
 const lossy = plan({ count: 24, loss: 0.12, seed: 7 });
@@ -30,5 +30,14 @@ describe('focusAt (what the camera follows)', () => {
   it('ignores packets frozen where they were lost', () => {
     // after first-pass arrivals and before resend, only lost packets have a position
     expect(at(lossy, STAGE_START.sort + 5)).toBe(1);
+  });
+});
+
+describe('zoomed (+/− buttons)', () => {
+  it('scales the distance and stays within the limits', () => {
+    expect(zoomed(4, 1 / ZOOM_STEP)).toBeCloseTo(3.2, 9);
+    expect(zoomed(4, ZOOM_STEP)).toBeCloseTo(5, 9);
+    expect(zoomed(ZOOM_MIN, 1 / ZOOM_STEP)).toBe(ZOOM_MIN);
+    expect(zoomed(ZOOM_MAX, ZOOM_STEP)).toBe(ZOOM_MAX);
   });
 });

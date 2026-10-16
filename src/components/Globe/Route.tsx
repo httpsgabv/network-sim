@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import { BufferAttribute, BufferGeometry } from 'three';
 import type { Line2 } from 'three-stdlib';
 import { cableById } from '../../data/network';
-import { arc, segmentBuffer } from '../../lib/globe';
+import { arc, segmentBuffer, TRANSIT } from '../../lib/globe';
 import { useReducedMotion } from '../../lib/useReducedMotion';
 import { toLatLon } from '../../sim/geo';
 import type { Leg } from '../../sim/route';
@@ -14,7 +14,7 @@ const legLine = (leg: Leg) => arc(leg.points.map(toLatLon), 1.003, 0.75);
 
 /**
  * The route over the mesh: the whole cables it uses (~35%), the legs it actually travels
- * (sea solid ~70%, land dashed), and marching dots along all of it.
+ * in the traffic colour (sea solid, land dashed), and marching dots along all of it.
  */
 export function Route() {
   const route = useSim((s) => s.route);
@@ -59,13 +59,13 @@ export function Route() {
         </lineSegments>
       )}
       {sea.map((points, i) => (
-        <Line key={`s${i}`} points={points} color="#ffffff" lineWidth={1.4} transparent opacity={0.7} depthWrite={false} />
+        <Line key={`s${i}`} points={points} color={TRANSIT} lineWidth={2.4} transparent opacity={0.55} depthWrite={false} />
       ))}
       {land.map((points, i) => (
-        <Line key={`l${i}`} points={points} color="#ffffff" lineWidth={1.2} transparent opacity={0.5} depthWrite={false} dashed dashSize={0.008} gapSize={0.008} />
+        <Line key={`l${i}`} points={points} color={TRANSIT} lineWidth={2} transparent opacity={0.5} depthWrite={false} dashed dashSize={0.008} gapSize={0.008} />
       ))}
       {!reduced && (
-        <Line ref={marching} points={all} color="#ffffff" lineWidth={1.8} transparent opacity={0.9} depthWrite={false} dashed dashSize={0.004} gapSize={0.03} />
+        <Line ref={marching} points={all} color={TRANSIT} lineWidth={3} transparent opacity={1} depthWrite={false} dashed dashSize={0.004} gapSize={0.03} />
       )}
     </>
   );

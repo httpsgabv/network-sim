@@ -162,12 +162,13 @@
 
   .hud { display: block; position: absolute; top: 16px; right: 18px; z-index: 2; }
 
+  /* edge to edge inside the network card (cancels its side padding): the globe gets all the room there is */
   .globe {
     flex: 1;
     min-height: 0;
+    min-width: 0;
     display: flex;
-    justify-content: center;
-    padding-top: 8px;
+    margin: 0 -12px;
   }
 
   .placeholder { width: auto; height: 100%; }

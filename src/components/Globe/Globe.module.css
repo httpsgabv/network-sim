@@ -1,8 +1,14 @@
+/*
+ * The canvas fills the whole space it is given (a square one clipped the zoomed-in globe).
+ * The sphere stays round and is sized by the height (vertical fov), so a box wider than tall is fine;
+ * stacked layout: about as tall as the screen is wide, so a portrait phone doesn't clip the sides.
+ */
 .stage {
   position: relative;
-  width: min(100%, 720px);
-  aspect-ratio: 1;
+  width: 100%;
+  height: min(100vw, 720px);
   margin: 0 auto;
+  overflow: hidden;
   cursor: grab;
 }
 .stage:active { cursor: grabbing; }
@@ -70,9 +76,36 @@
 .cableLabel:hover { border-color: var(--fg-muted); color: var(--fg); }
 .cableLabel:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
 
-/* cockpit: the globe is sized by the height it is given, never by its width */
+/* on the side edge of the network column, at the bottom: the HUD runs down the top right half */
+.zoom {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.zoomButton {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  background: #0a0a0bcc;
+  color: var(--fg-muted);
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
+}
+.zoomButton:hover { background: #27272a; color: var(--fg); }
+.zoomButton:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+
+/* cockpit: the canvas takes the whole network column; the sphere is sized by its height */
 @media (min-width: 1100px) and (min-height: 640px) {
-  /* min-width/overflow drop the automatic minimum size, else the canvas's last pixel width blocks shrinking */
-  .stage { width: auto; height: 100%; max-width: 100%; min-width: 0; overflow: hidden; margin: 0; }
+  /* min-width drops the automatic minimum size, else the canvas's last pixel width blocks shrinking */
+  .stage { width: 100%; height: 100%; min-width: 0; margin: 0; }
 }
 

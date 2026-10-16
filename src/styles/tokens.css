@@ -24,6 +24,7 @@
   --lost: #ef4444;
   --resend: #f5a524;
   --done: #22c55e;
+  --transit: #ff4fa3; /* only packets in flight, their trails and the route they follow (globe) */
   --radius-card: 12px;
   --radius-control: 8px;
   --radius-phone: 32px;

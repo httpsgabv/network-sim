@@ -74,8 +74,8 @@ Barra superior: marca · tipo de conteúdo + perda + MTU (as configurações de 
 Regras:
 - **Cockpit** (viewport ≥ 1100×640): tudo cabe em 100vh, **a página não rola**; cada painel rola por dentro. A mesma media query `(min-width: 1100px) and (min-height: 640px)` aparece em cada CSS module que muda no cockpit; mantenha as duas sincronizadas.
 - **Empilhado** (telas menores): a página rola, o globo vem primeiro, sem rolagem horizontal.
-- O globo é dimensionado pela **altura** disponível e é sempre quadrado (`min-width: 0; overflow: hidden` no contêiner, senão o canvas trava a largura).
-- Wheel zoom no globo fica desligado e `touch-action: pan-y`: o globo nunca pode prender a rolagem da página.
+- O **canvas do globo ocupa todo o espaço** da coluna Rede (de borda a borda no cockpit); a esfera continua redonda e dimensionada pela **altura** (fov vertical). Não volte a forçar o contêiner a ser quadrado: com zoom, a esfera era cortada no quadrado (2026-10-16). Mantenha `min-width: 0; overflow: hidden` no contêiner, senão o canvas trava a largura. Os botões +/− ficam na lateral direita, **embaixo** (acima do dock): o HUD ocupa a metade de cima desse lado.
+- O globo nunca pode prender a rolagem da página: `touch-action: pan-y` sempre, e **zoom pela roda só no cockpit** (lá a página não rola). Em qualquer layout há botões **+/−** no globo (decisão de 2026-10-16).
 - **Um pacote nunca está em A e em B ao mesmo tempo.** Ele sai da fila de A (deixa um lugar vazio) e voa para o buffer de B. Os dois cartões compartilham a mesma raiz de FLIP para isso.
 - Fila de A e buffer de B **não reembaralham**. A fila tem lugares fixos por seq. O buffer só **acrescenta** chegadas no fim até a ordenação. Reordenar em cascata causa flicker (já aconteceu).
 
@@ -91,16 +91,17 @@ Inspiração: Vercel / shadcn / Tesla. O globo é o protagonista; o resto fica q
 | `--surface` | `#0A0A0B` | cards, telefones, dock |
 | `--surface-2` | `#111113` | trilho de segmented/tabs |
 | `--border` / `--border-soft` | `#27272A` / `#1F1F23` | bordas 1px |
-| `--fg` | `#FAFAFA` | texto principal, pacote em trânsito |
+| `--fg` | `#FAFAFA` | texto principal |
 | `--fg-muted` | `#A1A1AA` | texto secundário |
 | `--fg-subtle` | `#84848D` | labels mono (≥ 4.5:1 também sobre `--surface-2`) |
 | `--land` | `#71717A` | pontos dos continentes |
 | `--lost` | `#EF4444` | **somente** pacote perdido |
 | `--resend` | `#F5A524` | **somente** SACK e retransmissão |
 | `--done` | `#22C55E` | **somente** "visualizado" / íntegro |
+| `--transit` | `#FF4FA3` | **somente** pacote em trânsito (e seu rastro) e a rota que ele segue no globo (aprovado em 2026-10-16) |
 | raios | 12 / 8 / 32 px | card / controle / telefone |
 
-**A paleta é fechada:** branco, preto, cinzas e as 3 cores de sinal. Cada cor de sinal tem um significado e só aparece nele.
+**A paleta é fechada:** branco, preto, cinzas e as 4 cores de sinal. Cada cor de sinal tem um significado e só aparece nele.
 
 ### Tipografia
 - **Geist** (corpo 13–15px, títulos peso 500 com letter-spacing negativo, etapa atual 30–44px) e **Geist Mono** (10–12px, labels uppercase com tracking, números, hex, timestamps). Self-hosted via pacote `geist`, sem Google Fonts em runtime.
