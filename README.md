@@ -1,13 +1,13 @@
 # Network Simulator
 
-Mostra, passo a passo, o que acontece quando você envia uma mensagem, foto ou vídeo pela internet: do botão **Send** em São Paulo até a pessoa em Tóquio ver o conteúdo.
+Mostra, passo a passo, o que acontece quando você envia uma mensagem, foto ou vídeo pela internet: do botão **Send** na cidade de origem até a pessoa na cidade de destino ver o conteúdo. Origem e destino são escolhidos na barra superior (15 cidades; padrão São Paulo → Tóquio).
 
 - O arquivo é **cifrado de verdade** (AES-256-GCM via WebCrypto), **fatiado em pacotes de 1 KB**, remontado e decifrado. O receptor recebe exatamente os mesmos bytes, conferidos byte a byte.
 - Os pacotes cruzam um **globo 3D** por cabos submarinos reais (EllaLink, SEA-ME-WE 6, SJC2…), saltando entre CDNs.
 - Alguns pacotes se **perdem**; o receptor **ordena** pelo número de sequência, encontra as lacunas, manda um **SACK** de volta e recebe só os faltantes.
 - Você pode enviar a sua própria foto ou vídeo (até 5 MB). Nada sai do navegador.
 
-Spec: [SPEC.md](SPEC.md) · Plano: [tasks/plan.md](tasks/plan.md) · Tarefas: [tasks/todo.md](tasks/todo.md)
+Specs: [specs/](specs/) (mapa de capacidades em [capability-map.md](specs/capability-map.md)) · Planos e tarefas: [tasks/](tasks/)
 
 ## Rodando
 
@@ -44,7 +44,8 @@ src/components/
   Globe/        R3F: esfera, pontos de terra, cabos, rota, tráfego (pacotes, rastros, perda, SACK), câmera
   Chat/         telefones do remetente e do destinatário, tiles cifrados
   Cards/        buffer do receptor, inspetor de pacote, eventos
-  Dock/         controles e linha do tempo
+  Dock/         controles, linha do tempo e seletor de rota
+  ui/           Select (formato shadcn sobre Radix)
 ```
 
 **O tempo é a única entrada da animação.** `snapshot(plan, t)` é uma função pura: dado o instante, devolve onde está cada pacote. Por isso o scrubber, o "próxima etapa" e o pause funcionam sem estado escondido, e os testes são determinísticos (perdas e jitter vêm de um PRNG com seed).
@@ -53,7 +54,7 @@ src/components/
 
 ### O que é simplificado (de propósito)
 
-- **Rota fixa** São Paulo → Tóquio, escolhida pelo menor caminho no grafo. Sem um backbone transcontinental nos EUA, ela passa pela Europa e por Suez, o que conta melhor a história. Na vida real, Brasil→Japão costuma passar pelos EUA (veja o comentário em `src/data/cables.ts`).
+- **Rota = menor caminho no grafo** entre as duas cidades escolhidas (15 cidades, 210 rotas, todas conectadas). Um backbone terrestre `nyc → lax` leva São Paulo → Tóquio por Brasil → EUA → Japão (≈ 22.800 km, 7 saltos). A latência exibida vem da distância (luz na fibra, 5 µs/km), enquanto a animação dura sempre ~13,5 s a 1×.
 - **MTU didático**: 1 KB por padrão, ajustável ao vivo de 256 B a 8 KB (re-cifra e re-fatia o mesmo arquivo). O real é ~1500 B, com cabeçalhos.
 - **Tempo desacelerado**: 1 ms de rede ≈ 37 ms de tela em 1×.
 - **Retransmissões nunca se perdem** (uma única rodada de SACK).

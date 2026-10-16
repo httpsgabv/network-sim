@@ -14,6 +14,7 @@
     "data:land": "node scripts/build-land-dots.mjs"
   },
   "dependencies": {
+    "@radix-ui/react-select": "^2.4.1",
     "@react-three/drei": "^10.7.9",
     "@react-three/fiber": "^9.8.2",
     "geist": "^1.8.1",

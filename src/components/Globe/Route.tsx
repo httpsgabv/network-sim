@@ -5,12 +5,13 @@ import type { Line2 } from 'three-stdlib';
 import { toLatLon } from '../../sim/geo';
 import { arc } from '../../lib/globe';
 import { useReducedMotion } from '../../lib/useReducedMotion';
-import { ROUTE } from '../../store';
+import { useSim } from '../../store';
 
 export function Route() {
+  const route = useSim((s) => s.route);
   const points = useMemo(
-    () => arc(ROUTE.legs.flatMap((leg, i) => (i === 0 ? leg.points : leg.points.slice(1)).map(toLatLon)), 1.003, 0.75),
-    [],
+    () => arc(route.legs.flatMap((leg, i) => (i === 0 ? leg.points : leg.points.slice(1)).map(toLatLon)), 1.003, 0.75),
+    [route],
   );
   const marching = useRef<Line2>(null);
   const reduced = useReducedMotion();

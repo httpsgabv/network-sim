@@ -3,15 +3,18 @@ import { useMemo, type RefObject } from 'react';
 import { Vector3 } from 'three';
 import { NODES } from '../../data/nodes';
 import { toVector } from '../../lib/globe';
-import { ROUTE } from '../../store';
+import { useSim } from '../../store';
 
-const onRoute = new Set(ROUTE.hops);
+/** Ids on the current route; the set only changes when the route does. */
+export function useOnRoute() {
+  const route = useSim((s) => s.route);
+  return useMemo(() => new Set(route.hops), [route]);
+}
 
 /** Nodes that get a marker and a label (landing stations are routing-only). */
 export const LABELED = NODES.filter((n) => n.kind !== 'landing').map((n) => ({
   ...n,
   position: toVector(n.at, 1.004),
-  active: onRoute.has(n.id),
 }));
 
 const eye = new Vector3(), projected = new Vector3();
@@ -37,6 +40,7 @@ function Marker({ position, active }: { position: Vector3; active: boolean }) {
  * component positions every frame. One React root instead of one per label (drei <Html>).
  */
 export function Nodes({ labels }: { labels: RefObject<(HTMLDivElement | null)[]> }) {
+  const onRoute = useOnRoute();
   useFrame(({ camera, size }) => {
     eye.copy(camera.position).normalize();
     LABELED.forEach((n, i) => {
@@ -46,14 +50,14 @@ export function Nodes({ labels }: { labels: RefObject<(HTMLDivElement | null)[]>
       projected.copy(n.position).project(camera);
       const x = ((projected.x + 1) / 2) * size.width, y = ((1 - projected.y) / 2) * size.height;
       el.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`;
-      el.style.opacity = String(Math.max(0, Math.min(1, (facing - 0.3) * 5)) * (n.active ? 1 : 0.75));
+      el.style.opacity = String(Math.max(0, Math.min(1, (facing - 0.3) * 5)) * (onRoute.has(n.id) ? 1 : 0.75));
     });
   });
 
   return (
     <>
       {LABELED.map((n) => (
-        <Marker key={n.id} position={n.position} active={n.active} />
+        <Marker key={n.id} position={n.position} active={onRoute.has(n.id)} />
       ))}
     </>
   );

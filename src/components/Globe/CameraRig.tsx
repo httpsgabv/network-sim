@@ -6,7 +6,7 @@ import { toXYZ } from '../../lib/globe';
 import { useReducedMotion } from '../../lib/useReducedMotion';
 import { slerp, type Vec3 } from '../../sim/geo';
 import { snapshotOf } from '../../lib/useSim';
-import { ROUTE, useSim } from '../../store';
+import { useSim } from '../../store';
 
 /** After the user drags the globe, leave the camera alone for this long. */
 const USER_HOLD_MS = 4000;
@@ -33,8 +33,8 @@ export function CameraRig({ controls }: { controls: RefObject<OrbitControlsImpl 
     if (reduced && clock.elapsedTime - lastCut.current < CUT_EVERY_S) return;
     lastCut.current = clock.elapsedTime;
 
-    const { t, plan } = useSim.getState();
-    const focus = ROUTE.posAt(focusAt(snapshotOf(plan, t)));
+    const { t, plan, route } = useSim.getState();
+    const focus = route.posAt(focusAt(snapshotOf(plan, t)));
     // look slightly towards the equator so both hemispheres of the route stay in frame
     const lat = Math.max(-15, Math.min(25, focus.at[0] * 0.6));
     const lon = focus.at[1] + (reduced ? 0 : Math.sin(clock.elapsedTime * 0.08) * 6);

@@ -36,3 +36,19 @@ describe('Dock', () => {
     expect(useSim.getState().loss).toBe(0.3);
   });
 });
+
+describe('Dock latency', () => {
+  const ms = () => parseInt(screen.getByText((t) => t.startsWith('t+')).textContent!.slice(2), 10);
+
+  it('t+ ms follows the route length', () => {
+    useSim.getState().scrub(100);
+    const { unmount } = render(<Dock />);
+    const long = ms();
+    unmount();
+    useSim.getState().setRoute('lon', 'fra');
+    useSim.getState().scrub(100);
+    render(<Dock />);
+    expect(long).toBeGreaterThan(50);
+    expect(ms()).toBeLessThan(long / 10);
+  });
+});

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MAX_BYTES, filePayload, formatBytes, textPayload } from '../src/lib/payload';
+import { MAX_BYTES, demoText, filePayload, formatBytes, textPayload } from '../src/lib/payload';
 
 describe('filePayload (upload trust boundary)', () => {
   it('accepts images and videos, keeping the bytes', async () => {
@@ -28,5 +28,11 @@ describe('textPayload / formatBytes', () => {
     expect(formatBytes(512)).toBe('512 B');
     expect(formatBytes(23_284)).toBe('22.7 KB');
     expect(formatBytes(3 * 1048576)).toBe('3.0 MB');
+  });
+});
+
+describe('demoText', () => {
+  it('names the origin city', () => {
+    expect(demoText('Londres')).toBe('Olha o pôr do sol daqui de Londres!');
   });
 });

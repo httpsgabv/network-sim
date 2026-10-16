@@ -1,7 +1,7 @@
 import { CABLES } from '../data/cables';
 import { nodeById } from '../data/nodes';
 import type { PacketState } from '../sim/engine';
-import { ROUTE } from '../store';
+import { routeKm, type Route } from '../sim/route';
 
 const cableNames = new Map(CABLES.map((c) => [c.id, c.name]));
 const nodeName = (id: string) => nodeById.get(id)?.name ?? id;
@@ -17,12 +17,14 @@ export const PACKET_STATE_LABEL: Record<PacketState, string> = {
 };
 
 /** Where on the route a fraction falls: the hop pair and the cable carrying it. */
-export function whereOnRoute(pos: number) {
-  const { leg } = ROUTE.posAt(pos);
-  const l = ROUTE.legs[leg];
+export function whereOnRoute(route: Route, pos: number) {
+  const { leg } = route.posAt(pos);
+  const l = route.legs[leg];
   return { leg, between: `${nodeName(l.a)} → ${nodeName(l.b)}`, cable: cableNames.get(l.cable) ?? l.cable };
 }
 
-export const ORIGIN_NAME = nodeName(ROUTE.hops[0]);
-export const DESTINATION_NAME = nodeName(ROUTE.hops.at(-1)!);
-export const HOP_COUNT = ROUTE.legs.length;
+export const endpointNames = (route: Route) => ({ origin: nodeName(route.hops[0]), destination: nodeName(route.hops.at(-1)!) });
+
+/** "17.340 km · 7 saltos": what the top bar and the HUD say about a route. */
+export const routeSummary = (route: Route) =>
+  `${Math.round(routeKm(route)).toLocaleString('pt-BR')} km · ${route.legs.length} ${route.legs.length === 1 ? 'salto' : 'saltos'}`;

@@ -1,4 +1,4 @@
-import { DESTINATION_NAME, HOP_COUNT, ORIGIN_NAME, PACKET_STATE_LABEL, whereOnRoute } from '../../lib/describe';
+import { endpointNames, PACKET_STATE_LABEL, whereOnRoute } from '../../lib/describe';
 import { useSnapshot } from '../../lib/useSim';
 import { internetChecksum } from '../../sim/checksum';
 import { senderLayout } from '../../sim/queues';
@@ -22,19 +22,21 @@ export function Inspector({ embedded = false }: { embedded?: boolean }) {
   const seq = useSim((s) => s.selected);
   const transfer = useSim((s) => s.transfer);
   const plan = useSim((s) => s.plan);
+  const route = useSim((s) => s.route);
   const view = snap.packets[seq];
   const planned = plan.packets[seq];
   const packet = transfer?.packets[seq];
   if (!view || !planned) return null;
 
-  const where = view.pos !== null ? whereOnRoute(view.pos) : null;
+  const where = view.pos !== null ? whereOnRoute(route, view.pos) : null;
+  const { origin, destination } = endpointNames(route);
   const done = view.state === 'delivered' || view.state === 'recovered';
   const position =
     view.state === 'lost' ? `Descartado · ${where?.between}`
       : where ? where.between
-        : done ? `${DESTINATION_NAME} (entregue)`
-          : `${ORIGIN_NAME} (fila de saída)`;
-  const ttl = 64 - (done ? HOP_COUNT : where?.leg ?? 0);
+        : done ? `${destination} (entregue)`
+          : `${origin} (fila de saída)`;
+  const ttl = 64 - (done ? route.legs.length : where?.leg ?? 0);
   // where the packet is right now: still at A (queued or waiting to be resent), on the network, or at B
   const atA = view.state === 'none' || senderLayout(plan, snap.t)[seq]?.slot != null;
   const whereNow: ActorKey = atA ? 'A' : done ? 'B' : 'N';

@@ -1,6 +1,6 @@
 # Plano de Implementação — Network Simulator
 
-Fonte: [SPEC.md](../SPEC.md) (aprovado em 2026-10-16) · Mockup: https://claude.ai/artifact/Ks6KXiYBF7JwR1Uw5fto6J (v4)
+Fonte: [specs/simulador-base.md](../../specs/simulador-base.md) (aprovado em 2026-10-16) · Mockup: https://claude.ai/artifact/Ks6KXiYBF7JwR1Uw5fto6J (v4)
 
 ## Abordagem
 

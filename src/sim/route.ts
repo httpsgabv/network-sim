@@ -4,6 +4,10 @@ import { angle, slerp, toLatLon, toVec, type Vec3 } from './geo';
 import type { LatLon } from './types';
 
 export const EARTH_KM = 6371;
+/** Light in fibre ≈ 200,000 km/s, i.e. 5 µs per km. */
+export const FIBRE_MS_PER_KM = 0.005;
+/** The transit stage lasts this many ticks (STAGE_START.transit → sort in the engine). */
+const TRANSIT_TICKS = 100;
 /** Peak hop altitude as a fraction of the globe radius. */
 export const HOP_ALTITUDE = 0.09;
 
@@ -114,3 +118,8 @@ export function findRoute(nodes: NetNode[], cables: Cable[], from: string, to: s
     },
   };
 }
+
+export const routeKm = (route: Route) => route.length * EARTH_KM;
+
+/** Simulated network time per tick, so a longer route reads as a longer one-way trip. */
+export const msPerTick = (km: number) => (km * FIBRE_MS_PER_KM) / TRANSIT_TICKS;

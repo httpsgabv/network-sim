@@ -1,7 +1,7 @@
 # Spec: Network Simulator — "Da tecla Send à tela do outro"
 
 > Status: **APROVADO (2026-10-16)**. Direção visual: mockup v4 "minimal tech" — https://claude.ai/artifact/Ks6KXiYBF7JwR1Uw5fto6J
-> Plano: [tasks/plan.md](tasks/plan.md) · Tarefas: [tasks/todo.md](tasks/todo.md)
+> Plano: [tasks/simulador-base/plan.md](../tasks/simulador-base/plan.md) · Tarefas: [tasks/simulador-base/todo.md](../tasks/simulador-base/todo.md)
 
 ## Premissas (corrija agora ou sigo com elas)
 
@@ -173,7 +173,7 @@ export function reassemble(packets: Packet[]): Uint8Array | null {
 
 ## Boundaries
 
-- **Sempre**: manter `sim/` livre de React/three; rodar `npm test` e `npm run lint` antes de considerar uma tarefa pronta; atualizar este SPEC quando uma decisão mudar.
+- **Sempre**: manter `sim/` livre de React/three; rodar `npm test` e `npm run lint` antes de considerar uma tarefa pronta; atualizar esta spec quando uma decisão mudar.
 - **Perguntar antes**: adicionar dependência fora da tabela de Tech Stack; trocar dataset de cabos; mudar o modelo de recuperação (SACK) por outro; qualquer backend/rede real.
 - **Nunca**: fazer requisição de rede real com o conteúdo do usuário; enviar arquivos do usuário para fora do navegador; commitar assets com licença incompatível.
 
@@ -190,7 +190,7 @@ export function reassemble(packets: Packet[]): Uint8Array | null {
 
 ## Decisões (antes "Open Questions")
 
-1. **Origem/destino**: v1 usa rota fixa SP → Tóquio. Escolher cidades fica para v2 (o grafo de rotas já suporta).
+1. **Origem/destino**: v1 usa rota fixa SP → Tóquio. Escolher cidades: ver "Feature: escolha de origem e destino" abaixo (em especificação).
 2. **Realismo de protocolo**: v1 mostra pacotes + SACK. Handshake TCP/TLS e DNS ficam para v2.
 3. **Vídeo**: tratado como arquivo (≤ 5 MB), sem streaming.
 4. **Visual**: minimal tech (mockup v4). ✅

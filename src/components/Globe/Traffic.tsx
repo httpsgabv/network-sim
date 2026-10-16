@@ -12,8 +12,9 @@ import { nodeById } from '../../data/nodes';
 import { toXYZ } from '../../lib/globe';
 import { useReducedMotion } from '../../lib/useReducedMotion';
 import { STAGE_START, END } from '../../sim/engine';
+import type { Route } from '../../sim/route';
 import { snapshotOf } from '../../lib/useSim';
-import { ROUTE, useSim } from '../../store';
+import { useSim } from '../../store';
 
 // ponytail: beyond this many packets we draw every k-th one; the buffer card still shows all of them.
 const MAX_PACKETS = 500;
@@ -71,14 +72,13 @@ const fragment = /* glsl */ `
   }
 `;
 
-function place(s: number, out: Float32Array, i: number) {
-  const r = ROUTE.posAt(s);
+function place(route: Route, s: number, out: Float32Array, i: number) {
+  const r = route.posAt(s);
   const [x, y, z] = toXYZ(r.at), k = SURFACE + r.h;
   out[i] = x * k; out[i + 1] = y * k; out[i + 2] = z * k;
 }
 
-const ORIGIN = toXYZ(nodeById.get(ROUTE.hops[0])!.at).map((c) => c * SURFACE);
-const DESTINATION = toXYZ(nodeById.get(ROUTE.hops.at(-1)!)!.at).map((c) => c * SURFACE);
+const surfaceAt = (id: string) => toXYZ(nodeById.get(id)!.at).map((c) => c * SURFACE);
 
 export function Traffic() {
   const reduced = useReducedMotion();
@@ -102,7 +102,7 @@ export function Traffic() {
   }, []);
 
   useFrame(({ camera, size, viewport, clock }) => {
-    const { t, plan } = useSim.getState();
+    const { t, plan, route } = useSim.getState();
     const snap = snapshotOf(plan, t);
 
     const pos = sprites.getAttribute('position').array as Float32Array;
@@ -121,7 +121,7 @@ export function Traffic() {
     };
     const at = (s: number, rgbv: readonly number[], alpha: number, sz: number, kind = KIND_DOT, phase = 0) => {
       if (n >= MAX_SPRITES) return;
-      place(s, pos, n * 3);
+      place(route, s, pos, n * 3);
       sprite(rgbv, alpha, sz, kind, phase);
     };
     const atPoint = (xyz: number[], rgbv: readonly number[], sz: number, phase: number) => {
@@ -135,7 +135,7 @@ export function Traffic() {
       for (let k = 0; k < TRAIL_SEGMENTS; k++) {
         for (const j of [k, k + 1]) {
           const f = j / TRAIL_SEGMENTS;
-          place(from + (to - from) * f, tPos, m * 3);
+          place(route, from + (to - from) * f, tPos, m * 3);
           tCol.set([rgbv[0], rgbv[1], rgbv[2], alpha * f * f], m * 4);
           m++;
         }
@@ -168,7 +168,7 @@ export function Traffic() {
     }
 
     // Two staggered rings pulse at the sender while sending, and at the receiver on delivery.
-    const pulseAt = t < STAGE_START.transit ? ORIGIN : t >= STAGE_START.decrypt && t < END ? DESTINATION : null;
+    const pulseAt = t < STAGE_START.transit ? surfaceAt(route.hops[0]) : t >= STAGE_START.decrypt && t < END ? surfaceAt(route.hops.at(-1)!) : null;
     if (pulseAt && !reduced) {
       const phase = (clock.elapsedTime * 0.7) % 1;
       atPoint(pulseAt, WHITE, 0.16, phase);

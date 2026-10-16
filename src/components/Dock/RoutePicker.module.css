@@ -1,0 +1,27 @@
+.picker { display: flex; align-items: center; gap: 4px; }
+
+/* A = solid, B = outlined: same shapes as the phones (never colour) */
+.chipA, .chipB {
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  font: 600 10px var(--font-mono);
+}
+.chipA { background: var(--fg); color: #000; }
+.chipB { border: 1px solid var(--fg); color: var(--fg); }
+
+.swap {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--fg-muted);
+  cursor: pointer;
+}
+.swap:hover { color: var(--fg); background: var(--surface-2); }
+.swap:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }

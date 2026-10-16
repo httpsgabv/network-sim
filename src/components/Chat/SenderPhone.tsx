@@ -1,4 +1,5 @@
 import { useId, useState, type FormEvent } from 'react';
+import { endpointNames } from '../../lib/describe';
 import { formatBytes, filePayload, send, textPayload } from '../../lib/payload';
 import { useSnapshot } from '../../lib/useSim';
 import { STAGE_START, STAGES } from '../../sim/engine';
@@ -24,6 +25,7 @@ export function SenderPhone() {
   const snap = useSnapshot();
   const transfer = useSim((s) => s.transfer);
   const plan = useSim((s) => s.plan);
+  const origin = useSim((s) => endpointNames(s.route).origin);
   const [text, setText] = useState('');
   const [error, setError] = useState<string | null>(null);
   const inputId = useId(), fileId = useId();
@@ -69,7 +71,7 @@ export function SenderPhone() {
   );
 
   return (
-    <Phone side="A" role="Remetente" city="São Paulo" contact={{ initials: 'KT', name: 'Kenji Tanaka' }} footer={footer}>
+    <Phone side="A" role="Remetente" city={origin} contact={{ initials: 'KT', name: 'Kenji Tanaka' }} footer={footer}>
       <div className={styles.incoming}>Como está o tempo aí?</div>
       {payload && (
         <div className={styles.outgoing}>

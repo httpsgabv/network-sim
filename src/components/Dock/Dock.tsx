@@ -4,7 +4,7 @@ import { ACTOR_GROUPS } from '../../lib/actors';
 import { send } from '../../lib/payload';
 import { useSnapshot } from '../../lib/useSim';
 import { STAGES, fromStagePos, toStagePos } from '../../sim/engine';
-import { MS_PER_TICK, useSim } from '../../store';
+import { useSim } from '../../store';
 import { Segmented } from '../Segmented';
 import styles from './Dock.module.css';
 
@@ -52,7 +52,7 @@ export function NetworkControls() {
 /** Playback controls: docked under the globe. */
 export function Dock() {
   const snap = useSnapshot();
-  const { playing, speed, toggle, stepNext, restart, scrub, setSpeed } = useSim();
+  const { playing, speed, toggle, stepNext, restart, scrub, setSpeed, msPerTick } = useSim();
   const scrubId = useId();
   const done = snap.stage >= STAGES.length;
 
@@ -104,7 +104,7 @@ export function Dock() {
         </div>
         <div className={styles.meta}>
           <span>{done ? DONE_LABEL : STAGE_LABEL[STAGES[snap.stage]]}</span>
-          <span>t+{Math.round(snap.t * MS_PER_TICK)} ms</span>
+          <span>t+{Math.round(snap.t * msPerTick)} ms</span>
         </div>
         <label htmlFor={scrubId} className="sr-only">Linha do tempo</label>
         <input

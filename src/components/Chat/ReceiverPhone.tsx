@@ -1,3 +1,4 @@
+import { endpointNames } from '../../lib/describe';
 import { formatBytes } from '../../lib/payload';
 import { useSnapshot } from '../../lib/useSim';
 import { STAGE_START, STAGES, type Snapshot } from '../../sim/engine';
@@ -28,6 +29,7 @@ export function ReceiverPhone() {
   const snap = useSnapshot();
   const transfer = useSim((s) => s.transfer);
   const plan = useSim((s) => s.plan);
+  const destination = useSim((s) => endpointNames(s.route).destination);
   const lost = plan.packets.filter((p) => p.lost).map((p) => p.seq);
   const visible = snap.received.length > 0 || snap.t >= STAGE_START.decrypt;
   const decrypted = snap.t >= STAGE_START.decrypt;
@@ -43,7 +45,7 @@ export function ReceiverPhone() {
   );
 
   return (
-    <Phone side="B" role="Destinatário" city="Tóquio" contact={{ initials: 'AS', name: 'Ana Souza' }} footer={footer} align="end">
+    <Phone side="B" role="Destinatário" city={destination} contact={{ initials: 'AS', name: 'Ana Souza' }} footer={footer} align="end">
       <div className={styles.outgoing}><p className={styles.text}>Como está o tempo aí?</p></div>
       {!visible && <p className={styles.waiting}>Sem mensagens novas</p>}
       {visible && transfer && payload && (

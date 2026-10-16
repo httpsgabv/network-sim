@@ -1,0 +1,51 @@
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  background: var(--surface-2);
+  color: var(--fg);
+  font: 500 13px var(--font-sans);
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.trigger:hover { border-color: #3f3f46; }
+.trigger:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+.trigger > span:first-child { display: inline-flex; align-items: center; gap: 8px; }
+
+.chevron { opacity: 0.5; flex: none; }
+
+/* no shadow: only the dock has one (AGENTS.md); the border separates the list from the globe */
+.content {
+  z-index: 50;
+  min-width: var(--radix-select-trigger-width);
+  max-height: min(var(--radix-select-content-available-height), 360px);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  color: var(--fg);
+}
+
+.viewport { padding: 4px; }
+
+.item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 36px;
+  padding: 0 8px;
+  border-radius: 6px;
+  font: 400 13px var(--font-sans);
+  cursor: pointer;
+  outline: none;
+  user-select: none;
+}
+.item[data-highlighted] { background: #27272a; }
+.item[data-state='checked'] { font-weight: 500; }
+
+.check { display: inline-flex; color: var(--fg); }

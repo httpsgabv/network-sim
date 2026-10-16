@@ -4,10 +4,12 @@ import { Details } from './components/Cards/Details';
 import { ReceiverPhone } from './components/Chat/ReceiverPhone';
 import { SenderPhone } from './components/Chat/SenderPhone';
 import { Dock, NetworkControls } from './components/Dock/Dock';
+import { RoutePicker } from './components/Dock/RoutePicker';
 import { Hud } from './components/Hud';
 import { Segmented } from './components/Segmented';
 import { StageHeader } from './components/StageHeader';
 import { actorAt } from './lib/actors';
+import { routeSummary } from './lib/describe';
 import { sendDemo } from './lib/payload';
 import { useClock } from './lib/useSim';
 import { KINDS, useSim, type Kind } from './store';
@@ -25,6 +27,7 @@ const KIND_OPTIONS = (Object.keys(KINDS) as Kind[]).map((k) => ({ value: k, labe
 export default function App() {
   useClock();
   const kind = useSim((s) => s.kind);
+  const summary = useSim((s) => routeSummary(s.route));
   // re-renders only when the acting side changes, not on every tick
   const networkActive = useSim((s) => actorAt(s.t).key === 'N');
 
@@ -39,14 +42,17 @@ export default function App() {
             <ellipse cx="11" cy="11" rx="4" ry="9.5" fill="none" stroke="currentColor" strokeWidth="1.3" />
             <circle cx="17.5" cy="6" r="2" fill="currentColor" />
           </svg>
-          Network Simulator
-          <span className={styles.badge}>beta</span>
+          <span className={styles.brandName}>Network Simulator</span>
+          <span className={`${styles.badge} ${styles.brandName}`}>beta</span>
         </div>
         <div className={styles.scenario}>
           <Segmented label="Tipo de conteúdo" options={KIND_OPTIONS} value={kind} onChange={(k) => void sendDemo(k)} />
           <NetworkControls />
         </div>
-        <div className={styles.route}>GRU → NRT · 18.540 km</div>
+        <div className={styles.route}>
+          <RoutePicker />
+          <span className={styles.summary}>{summary}</span>
+        </div>
       </header>
       <main className={styles.workspace}>
         <div className={styles.stageRow}>

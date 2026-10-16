@@ -2,14 +2,14 @@
 
 Regras para qualquer agente (ou pessoa) que mexer neste projeto. Em caso de dúvida, este arquivo vence o gosto pessoal; se uma regra precisar mudar, mude-a aqui primeiro e diga por quê.
 
-Fontes de verdade: [SPEC.md](SPEC.md) (o quê e por quê), [tasks/plan.md](tasks/plan.md) e [tasks/todo.md](tasks/todo.md) (andamento), [README.md](README.md) (como rodar).
-Mockup aprovado: https://claude.ai/artifact/Ks6KXiYBF7JwR1Uw5fto6J, artboard **"v6 — Contextos"** (layout e cores; já no sistema monocromático descrito abaixo). As artboards v4 e v5 ficam só como histórico.
+Fontes de verdade: [specs/](specs/) (o quê e por quê; mapa em [capability-map.md](specs/capability-map.md)), `tasks/<spec>/plan.md` e `tasks/<spec>/todo.md` (andamento), [README.md](README.md) (como rodar).
+Mockup aprovado: https://claude.ai/artifact/Ks6KXiYBF7JwR1Uw5fto6J, artboards **"v6 — Contextos"** (layout) e **"v7 — Rotas"** (seletor de origem/destino); já no sistema monocromático descrito abaixo). As artboards v4 e v5 ficam só como histórico.
 
 ---
 
 ## 1. O que é
 
-Simulador educativo, em React, do caminho de uma mensagem, foto ou vídeo de **Ana (A, São Paulo)** até **Kenji (B, Tóquio)**: cifrar → fatiar em pacotes → cruzar cabos submarinos num globo 3D → perder alguns → ordenar → pedir os faltantes (SACK) → retransmitir → decifrar → exibir.
+Simulador educativo, em React, do caminho de uma mensagem, foto ou vídeo de **Ana (A)** até **Kenji (B)**, em duas cidades à escolha (padrão: São Paulo → Tóquio): cifrar → fatiar em pacotes → cruzar cabos submarinos num globo 3D → perder alguns → ordenar → pedir os faltantes (SACK) → retransmitir → decifrar → exibir.
 
 Os bytes são reais (AES-256-GCM via WebCrypto, pacotes reais, remontagem conferida byte a byte). A animação é uma função pura do tempo.
 
@@ -35,12 +35,13 @@ src/sim/      núcleo PURO, sem React/three/DOM. Tudo testado.
   pipeline    transmit(): cifra → fatia → remonta → decifra, com os bytes reais
   route, geo, packetize, crypto, checksum, prng
 src/lib/      cola entre sim e UI (hooks, actors, fragments, useFlip, payload)
-src/store.ts  zustand: t, playing, speed, kind, loss, mtu, selected, panel, transfer
+src/store.ts  zustand: t, playing, speed, kind, loss, mtu, origin, destination, route, msPerTick, selected, panel, transfer
 src/components/
   Globe/      R3F. Lê o store com getState() dentro de useFrame, nunca re-renderiza por tick
   Chat/       telefones A e B
   Cards/      Queues (fila A, buffer B), Details (linha de detalhes + FLIP), Inspector, EventLog
-  Dock/       reprodução (Dock) e cenário (NetworkControls, na barra superior)
+  Dock/       reprodução (Dock) e cenário na barra superior (NetworkControls, RoutePicker)
+  ui/         primitivos no formato do shadcn sobre Radix (Select), estilizados com os tokens
 ```
 
 - **O tempo é a única entrada da animação.** Nada de estado escondido avançando por conta própria: scrubber, "próxima etapa" e pause dependem disso.
@@ -58,7 +59,7 @@ Três contextos, sempre na mesma posição, em duas linhas alinhadas:
 | **Rede** | Globo + título da etapa + HUD + dock de reprodução | **Eventos \| Pacote** (abas) |
 | **B · Destinatário** | Telefone B | **Buffer de entrada** (chegadas fora de ordem → ordenação → lacunas → cor volta) |
 
-Barra superior: marca · tipo de conteúdo + perda + MTU (as configurações de cenário, que reiniciam o envio) · rota.
+Barra superior: marca · tipo de conteúdo + perda + MTU (as configurações de cenário, que reiniciam o envio) · rota (origem → destino, ⇄ inverte; também reinicia o envio).
 
 | Etapa | Contexto |
 |---|---|
@@ -145,7 +146,7 @@ Já erramos duas vezes (v2 neon; v6 com azul/lilás). **Não faça:**
 
 ## 9. Fluxo de trabalho com o usuário
 
-- **Spec-driven:** mudança grande começa no SPEC/plano; decisões que mudam ficam registradas no SPEC e no `tasks/todo.md`.
+- **Spec-driven:** mudança grande começa em `specs/<nome>.md` e `tasks/<nome>/plan.md`; decisões que mudam ficam registradas na spec e em `tasks/<nome>/todo.md`.
 - **Mudança de UI: mockup primeiro.** Atualize o artifact (nova artboard ao lado da anterior), espere aprovação e só então implemente.
 - **Testes unitários sempre** (TDD no `src/sim/` e em lógica nova). Componentes com jsdom + Testing Library; CSS modules não são processados no Vitest, então exponha estado testável via `data-*` (ex.: `data-ciphered`, `data-active`, `data-flip`).
 - **Validação no browser só quando pedida.** O usuário prefere economizar tokens; quando não houver validação visual, diga isso explicitamente no fim.

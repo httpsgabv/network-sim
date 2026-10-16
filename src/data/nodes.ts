@@ -35,3 +35,6 @@ export const NODES: NetNode[] = [
 ];
 
 export const nodeById = new Map(NODES.map((n) => [n.id, n]));
+
+/** The pickable cities (landing stations only route), west → east. */
+export const CITIES = NODES.filter((n) => n.kind !== 'landing').sort((a, b) => a.at[1] - b.at[1]);

@@ -3,11 +3,17 @@ import { CABLES } from './data/cables';
 import { NODES } from './data/nodes';
 import { END, STAGE_START, STAGES, plan, type Plan } from './sim/engine';
 import { MTU, type Transmission } from './sim/pipeline';
-import { findRoute } from './sim/route';
+import { findRoute, msPerTick, routeKm, type Route } from './sim/route';
 import { prefersReducedMotion } from './lib/useReducedMotion';
 
-/** v1 scenario is fixed (see SPEC "Decisões"); the graph already supports other city pairs. */
-export const ROUTE = findRoute(NODES, CABLES, 'sao', 'tyo');
+const routes = new Map<string, Route>();
+/** Memoized per pair: at most 15 × 14 routes, so switching never re-runs Dijkstra on a seen pair. */
+export function routeFor(origin: string, destination: string): Route {
+  const key = `${origin}>${destination}`;
+  let r = routes.get(key);
+  if (!r) routes.set(key, (r = findRoute(NODES, CABLES, origin, destination)));
+  return r;
+}
 
 /** `count` is only a placeholder until a real payload has been encrypted and packetized. */
 export const KINDS = {
@@ -38,8 +44,6 @@ export interface Transfer extends Omit<Transmission, 'delivered'> {
 
 /** At 1× the whole send (END ticks) takes END / TICKS_PER_SECOND ≈ 13.5 s. */
 export const TICKS_PER_SECOND = 20;
-/** Simulated network time per tick: transit (100 ticks) ≈ 135 ms one-way SP → Tóquio. */
-export const MS_PER_TICK = 1.35;
 const MAX_FRAME_MS = 100;
 const SEED = 7;
 
@@ -49,6 +53,13 @@ interface SimState {
   speed: number;
   kind: Kind;
   loss: number;
+  /** Node ids, always different; the route and its latency derive from the pair. */
+  origin: string;
+  destination: string;
+  route: Route;
+  msPerTick: number;
+  setRoute(origin: string, destination: string): void;
+  swapRoute(): void;
   /** Middle detail card: the event log, or the packet picked in a queue. */
   panel: Panel;
   setPanel(panel: Panel): void;
@@ -76,7 +87,8 @@ const countOf = (s: { transfer: Transfer | null; kind: Kind }) => s.transfer?.pa
 const clampT = (t: number) => Math.max(0, Math.min(END, t));
 
 // With reduced motion the user starts playback themselves instead of it autoplaying.
-const initial = { t: 0, playing: !prefersReducedMotion(), speed: 1, kind: 'photo' as Kind, loss: 0.12, mtu: MTU, selected: 5, transfer: null, panel: 'events' as Panel };
+const route0 = routeFor('sao', 'tyo');
+const initial = { origin: 'sao', destination: 'tyo', route: route0, msPerTick: msPerTick(routeKm(route0)), t: 0, playing: !prefersReducedMotion(), speed: 1, kind: 'photo' as Kind, loss: 0.12, mtu: MTU, selected: 5, transfer: null, panel: 'events' as Panel };
 
 export const useSim = create<SimState>()((set, get) => ({
   ...initial,
@@ -105,6 +117,15 @@ export const useSim = create<SimState>()((set, get) => ({
     set({ kind, transfer: null, plan: p, t: 0, playing: true, selected: Math.min(get().selected, p.packets.length - 1) });
   },
   setMtu: (mtu) => set({ mtu }),
+  setRoute(origin, destination) {
+    const { origin: o, destination: d } = get();
+    // picking the city that is at the other end swaps the pair instead of being refused
+    if (origin === destination) [origin, destination] = [d, o];
+    const route = routeFor(origin, destination);
+    // the plan stays: its seed doesn't depend on the route, so the same seqs are lost anywhere
+    set({ origin, destination, route, msPerTick: msPerTick(routeKm(route)), t: 0, playing: !prefersReducedMotion() });
+  },
+  swapRoute: () => get().setRoute(get().destination, get().origin),
   setLoss: (loss) => set({ loss, plan: build(countOf(get()), loss), t: 0, playing: true }),
   load(transfer) {
     const p = build(transfer.packets.length, get().loss);

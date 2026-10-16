@@ -102,6 +102,39 @@ describe('store.load (real transfer)', () => {
   });
 });
 
+describe('store.setRoute', () => {
+  it('starts at São Paulo → Tóquio with its latency', () => {
+    expect(s()).toMatchObject({ origin: 'sao', destination: 'tyo' });
+    expect(s().route.hops[0]).toBe('sao');
+    expect(s().msPerTick * 100).toBeGreaterThan(100);
+  });
+
+  it('restarts, keeps kind/loss/MTU and the plan (same lost seqs on any route)', () => {
+    s().setKind('video'); s().setLoss(0.25); s().setMtu(2048);
+    const lost = s().plan.packets.map((p) => p.lost);
+    s().scrub(120);
+    s().setRoute('lon', 'fra');
+    expect(s()).toMatchObject({ origin: 'lon', destination: 'fra', t: 0, playing: true, kind: 'video', loss: 0.25, mtu: 2048 });
+    expect(s().plan.packets.map((p) => p.lost)).toEqual(lost);
+    expect(s().msPerTick).toBeLessThan(0.1);
+  });
+
+  it('picking the city at the other end swaps the pair, never origin = destination', () => {
+    s().setRoute('tyo', 'tyo');
+    expect(s()).toMatchObject({ origin: 'tyo', destination: 'sao' });
+    s().setRoute('sao', 'sao');
+    expect(s()).toMatchObject({ origin: 'sao', destination: 'tyo' });
+  });
+
+  it('swapRoute reverses; the same pair gives the same route instance', () => {
+    const r = s().route;
+    s().swapRoute();
+    expect(s()).toMatchObject({ origin: 'tyo', destination: 'sao', t: 0 });
+    s().swapRoute();
+    expect(s().route).toBe(r);
+  });
+});
+
 describe('store.panel (middle detail card)', () => {
   it('shows events by default; picking a packet switches to its details', () => {
     expect(s().panel).toBe('events');

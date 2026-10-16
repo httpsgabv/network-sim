@@ -184,3 +184,16 @@ describe('EventLog', () => {
     expect(screen.getAllByText(/perdido ·/).length).toBeGreaterThan(0);
   });
 });
+
+describe('route-aware text', () => {
+  it('event log names the chosen cities and uses their latency', () => {
+    useSim.getState().setRoute('lon', 'fra');
+    useSim.getState().scrub(STAGE_START.transit + 1);
+    render(<EventLog />);
+    expect(screen.getByText(/Primeiro pacote deixa o CDN Londres/)).toBeTruthy();
+    cleanup();
+    useSim.getState().scrub(STAGE_START.sort);
+    render(<EventLog />);
+    expect(screen.getByText(/Primeiro pacote chega ao CDN Frankfurt/)).toBeTruthy();
+  });
+});

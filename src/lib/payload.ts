@@ -1,10 +1,12 @@
 import { mulberry32 } from '../sim/prng';
 import { transmit } from '../sim/pipeline';
+import { endpointNames } from './describe';
 import { useSim, type Kind, type Payload, type Transfer } from '../store';
 
 /** SPEC premise 8: videos (and photos) up to 5 MB. */
 export const MAX_BYTES = 5 * 1024 * 1024;
-export const DEMO_TEXT = 'Olha o pôr do sol daqui de São Paulo!';
+export const demoText = (city: string) => `Olha o pôr do sol daqui de ${city}!`;
+const originCity = () => endpointNames(useSim.getState().route).origin;
 
 const toBytes = async (blob: Blob) => new Uint8Array(await blob.arrayBuffer());
 
@@ -72,7 +74,7 @@ export function textPayload(text: string): Payload {
 }
 
 export function demoPayload(kind: Kind): Promise<Payload> {
-  if (kind === 'text') return Promise.resolve(textPayload(DEMO_TEXT));
+  if (kind === 'text') return Promise.resolve(textPayload(demoText(originCity())));
   return kind === 'photo' ? demoPhoto() : demoVideo();
 }
 
@@ -129,3 +131,10 @@ async function videoPoster(src: string): Promise<string | undefined> {
 export const sendDemo = async (kind: Kind) => send(await demoPayload(kind));
 
 export const formatBytes = (n: number) => (n < 1024 ? `${n} B` : n < 1048576 ? `${(n / 1024).toFixed(1)} KB` : `${(n / 1048576).toFixed(1)} MB`);
+
+/** After a route change, the demo text must name the new origin; a message the user typed stays. */
+export async function refreshDemoText(previousOrigin: string) {
+  const { transfer } = useSim.getState();
+  if (transfer?.payload.kind !== 'text') return;
+  if (new TextDecoder().decode(transfer.payload.bytes) === demoText(previousOrigin)) await sendDemo('text');
+}

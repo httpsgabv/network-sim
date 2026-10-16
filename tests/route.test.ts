@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { EARTH_KM, findRoute } from '../src/sim/route';
+import { findRoute, msPerTick, routeKm } from '../src/sim/route';
 import { NODES } from '../src/data/nodes';
 import { CABLES } from '../src/data/cables';
 
@@ -8,15 +8,26 @@ const close = (a: readonly [number, number], b: readonly [number, number]) =>
   Math.abs(a[0] - b[0]) < 1e-6 && Math.abs(a[1] - b[1]) < 1e-6;
 
 describe('findRoute', () => {
-  it('finds the shortest SP → Tóquio path through the cable graph', () => {
-    expect(route.hops).toEqual(['sao', 'fza', 'sin', 'mrs', 'bom', 'sgp', 'hkg', 'tyo']);
-    expect(route.legs.map((l) => l.cable)).toEqual(['backbone-br', 'ellalink', 'backbone-eu', 'smw6', 'smw6', 'sjc2', 'sjc2']);
+  it('finds the shortest SP → Tóquio path: Brazil → US backbone → Japan', () => {
+    expect(route.hops).toEqual(['sao', 'fza', 'mia', 'vab', 'nyc', 'lax', 'ore', 'tyo']);
+    expect(route.legs.map((l) => l.cable)).toContain('us-transcon');
   });
 
   it('total length is plausible for that path', () => {
-    const km = route.length * EARTH_KM;
-    expect(km).toBeGreaterThan(24000);
-    expect(km).toBeLessThan(32000);
+    expect(routeKm(route)).toBeGreaterThan(22000);
+    expect(routeKm(route)).toBeLessThan(23500);
+  });
+
+  it('São Paulo → Los Angeles crosses the US backbone, not Europe and Asia', () => {
+    const r = findRoute(NODES, CABLES, 'sao', 'lax');
+    expect(r.hops).toContain('nyc');
+    expect(routeKm(r)).toBeLessThan(15000);
+  });
+
+  it('every pair of pickable cities has a route (210 ordered pairs)', () => {
+    const cities = NODES.filter((n) => n.kind !== 'landing');
+    expect(cities).toHaveLength(15);
+    for (const a of cities) for (const b of cities) if (a !== b) expect(() => findRoute(NODES, CABLES, a.id, b.id)).not.toThrow();
   });
 
   it('works in reverse and between any two nodes', () => {
@@ -29,6 +40,21 @@ describe('findRoute', () => {
   it('throws for unknown or unreachable nodes', () => {
     expect(() => findRoute(NODES, CABLES, 'sao', 'nope')).toThrow();
     expect(() => findRoute([...NODES, { id: 'ilha', name: 'Ilha', kind: 'cdn', at: [0, 0] }], CABLES, 'sao', 'ilha')).toThrow();
+  });
+});
+
+describe('msPerTick', () => {
+  it('scales with distance: twice the km, twice the ms', () => {
+    expect(msPerTick(20000)).toBeCloseTo(2 * msPerTick(10000), 12);
+  });
+
+  it('a 100-tick transit takes the fibre time: 22,762 km ≈ 114 ms one-way', () => {
+    expect(100 * msPerTick(routeKm(route))).toBeCloseTo(114, -1);
+  });
+
+  it('London → Frankfurt is far quicker than São Paulo → Tóquio', () => {
+    const short = routeKm(findRoute(NODES, CABLES, 'lon', 'fra'));
+    expect(msPerTick(short)).toBeLessThan(msPerTick(routeKm(route)) / 10);
   });
 });
 

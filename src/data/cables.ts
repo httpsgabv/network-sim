@@ -9,8 +9,6 @@ export interface Cable {
 }
 
 // Hand-authored approximations of real systems (not TeleGeography data: that is CC BY-NC-SA).
-// ponytail: no US transcontinental backbone, so SP→Tóquio routes via Europe/Suez for the narrative;
-// add one (nyc→lax) to get the more realistic Brazil→US→Japan path.
 export const CABLES: Cable[] = [
   { id: 'backbone-br', name: 'Backbone BR', kind: 'terrestrial', path: ['sao', 'fza'] },
   { id: 'ellalink', name: 'EllaLink', kind: 'submarine', path: ['fza', [14.9, -23.5], [32.6, -16.9], 'sin'] },
@@ -27,6 +25,7 @@ export const CABLES: Cable[] = [
   { id: 'marea', name: 'MAREA', kind: 'submarine', path: ['vab', 'bil'] },
   { id: 'grace-hopper', name: 'Grace Hopper', kind: 'submarine', path: ['nyc', [50.8, -4.6], 'lon'] },
   { id: 'faster', name: 'FASTER', kind: 'submarine', path: ['ore', 'tyo'] },
+  { id: 'us-transcon', name: 'Backbone US-Transcon', kind: 'terrestrial', path: ['nyc', [41.9, -87.6], [39.7, -105], 'lax'] },
   { id: 'us-west', name: 'Backbone US-West', kind: 'terrestrial', path: ['lax', 'ore'] },
   { id: 'southern-cross', name: 'Southern Cross', kind: 'submarine', path: ['lax', [21.3, -157.9], [-18, 178], 'syd'] },
   { id: 'indigo', name: 'INDIGO', kind: 'submarine', path: ['sgp', [-31.9, 115.8], 'syd'] },
