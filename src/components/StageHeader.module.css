@@ -1,0 +1,60 @@
+.header { text-align: center; padding-top: 24px; }
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font: 400 11px var(--font-mono);
+  color: var(--fg-muted);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 4px 10px 4px 8px;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--fg);
+  box-shadow: 0 0 10px var(--fg);
+}
+.recovery { background: var(--resend); box-shadow: 0 0 10px var(--resend); }
+.done { background: var(--done); box-shadow: 0 0 10px var(--done); }
+
+.title {
+  margin: 12px 0 0;
+  font-size: clamp(32px, 5vw, 44px);
+  line-height: 1.05;
+  font-weight: 500;
+  letter-spacing: -0.035em;
+}
+
+.hint {
+  margin: 10px auto 0;
+  max-width: 520px;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--fg-muted);
+}
+
+/* cockpit: overlaid on the top-left of the globe */
+@media (min-width: 1100px) and (min-height: 640px) {
+  .header { text-align: left; padding-top: 0; }
+  .badge { background: #0a0a0bcc; }
+  .title { margin-top: 10px; font-size: 30px; }
+  .hint { margin: 6px 0 0; font-size: 13px; line-height: 1.45; }
+}
+
+/* who is acting in this stage: A (sender), the network, or B (receiver) */
+.actor {
+  display: inline-block;
+  margin-right: 6px;
+  font: 500 11px var(--font-mono);
+  border-radius: 6px;
+  padding: 3px 8px;
+  vertical-align: middle;
+}
+.actorA { background: var(--fg); color: #09090b; border: 1px solid var(--fg); }
+.actorB { background: transparent; color: var(--fg); border: 1px solid var(--fg); }
+.actorN { background: transparent; color: var(--fg-muted); border: 1px dashed var(--fg-subtle); }

@@ -1,0 +1,185 @@
+/* ---------- stacked layout (default; small screens scroll) ---------- */
+
+.app {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 0 16px 56px;
+}
+
+.nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.badge {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--fg-muted);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+.scenario {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.route {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--fg-muted);
+}
+
+.workspace {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding-top: 16px;
+}
+
+.stageRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+}
+
+.stage {
+  flex: 999 1 520px;
+  min-width: 0;
+  max-width: 760px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* the HUD repeats numbers the stacked layout shows in the cards right below */
+.hud { display: none; }
+
+.details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: stretch;
+}
+
+.placeholder {
+  width: min(100%, 720px);
+  aspect-ratio: 1;
+  margin: 0 auto;
+  border: 1px dashed var(--border);
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  color: var(--fg-subtle);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* narrower screens: globe on top, the two phones side by side underneath */
+@media (max-width: 1099px) {
+  .stage { order: -1; flex-basis: 100%; }
+}
+
+/* ---------- cockpit: everything on one screen (same query in Chat, Globe, Cards, Dock, StageHeader) ---------- */
+
+@media (min-width: 1100px) and (min-height: 640px) {
+  .app {
+    max-width: none;
+    height: 100vh;
+    padding: 0;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    overflow: hidden;
+  }
+
+  .nav { padding: 8px 16px; flex-wrap: nowrap; }
+  .scenario { flex-wrap: nowrap; }
+
+  .workspace {
+    min-height: 0;
+    padding: 12px 16px 16px;
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) clamp(200px, 30vh, 260px);
+    gap: 12px;
+  }
+
+  .stageRow {
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 236px minmax(0, 1fr) 236px;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .stage {
+    position: relative;
+    max-width: none;
+    min-height: 0;
+    gap: 0;
+    padding: 0 12px 12px;
+    border: 1px solid var(--border-soft);
+    border-radius: 18px;
+    overflow: hidden;
+  }
+
+  .title {
+    position: absolute;
+    top: 16px;
+    left: 18px;
+    z-index: 2;
+    max-width: min(300px, 32%);
+    pointer-events: none;
+  }
+
+  .hud { display: block; position: absolute; top: 16px; right: 18px; z-index: 2; }
+
+  .globe {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    justify-content: center;
+    padding-top: 8px;
+  }
+
+  .placeholder { width: auto; height: 100%; }
+
+  .details {
+    min-height: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 0.85fr) minmax(0, 1fr);
+    gap: 12px;
+  }
+}
+
+/* cockpit on narrower desktops: the decorative route label gives its room to the scenario controls */
+@media (min-width: 1100px) and (min-height: 640px) and (max-width: 1279px) {
+  .route { display: none; }
+}
+
+/* the globe is the network's place: it lights up while the network is the one acting */
+@media (min-width: 1100px) and (min-height: 640px) {
+  .stage { transition: border-color 0.3s; }
+  .stage[data-active='true'] { border-color: #fafafa55; }
+}

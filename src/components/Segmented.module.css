@@ -1,0 +1,41 @@
+.track {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  padding: 3px;
+}
+
+.caption {
+  font-size: 11px;
+  color: var(--fg-subtle);
+  padding: 0 6px 0 8px;
+}
+
+.item {
+  min-height: 36px;
+  min-width: 40px;
+  padding: 0 14px;
+  border-radius: 7px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--fg-muted);
+  font: 500 13px var(--font-sans);
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.item:hover { color: var(--fg); }
+
+.item[aria-pressed='true'] {
+  background: var(--border);
+  border-color: #3f3f46;
+  color: var(--fg);
+}
+
+.mono {
+  font: 400 12px var(--font-mono);
+  padding: 0 8px;
+}

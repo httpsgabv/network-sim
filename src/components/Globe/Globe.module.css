@@ -1,0 +1,51 @@
+.stage {
+  position: relative;
+  width: min(100%, 720px);
+  aspect-ratio: 1;
+  margin: 0 auto;
+  cursor: grab;
+}
+.stage:active { cursor: grabbing; }
+
+/* OrbitControls sets an inline touch-action: none; let vertical swipes scroll the page, horizontal drags rotate */
+/* (drei attaches the controls to R3F's wrapper div, not the canvas itself) */
+.stage div, .stage canvas { touch-action: pan-y !important; }
+
+.labels {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.anchor {
+  position: absolute;
+  left: 0;
+  top: 0;
+  opacity: 0;
+  will-change: transform;
+}
+
+.label {
+  display: block;
+  transform: translate(10px, -50%);
+  white-space: nowrap;
+  font: 400 10px var(--font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #e4e4e7;
+  text-shadow: 0 0 8px #000;
+  user-select: none;
+}
+
+.labelDim {
+  font-size: 9px;
+  color: var(--fg-subtle);
+}
+
+/* cockpit: the globe is sized by the height it is given, never by its width */
+@media (min-width: 1100px) and (min-height: 640px) {
+  /* min-width/overflow drop the automatic minimum size, else the canvas's last pixel width blocks shrinking */
+  .stage { width: auto; height: 100%; max-width: 100%; min-width: 0; overflow: hidden; margin: 0; }
+}
+
