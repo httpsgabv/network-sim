@@ -36,7 +36,7 @@ export const DEFAULT_VIDEO_BITRATE_KBPS = 1000;
 /** Below this buffer BOLA never adds artificial delay. */
 export const BOLA_MINIMUM_BUFFER_S = 10;
 export const BOLA_MINIMUM_BUFFER_PER_LEVEL_S = 2;
-/** Not used by the steady-state formula in 5.2.1 (declared in the file, kept here for completeness). */
+/** Each loaded segment multiplies the placeholder buffer by this (`_checkNewSegment`). */
 export const BOLA_PLACEHOLDER_BUFFER_DECAY = 0.99;
 // Utilities: u_i = ln(bitrate_i) − ln(bitrate_0) + 1 (so u_0 = 1).
 // bufferTime = max(bufferTimeDefault, MIN + PER_LEVEL × levels); gp = (u_max − 1) / (bufferTime / MIN − 1); Vp = MIN / gp.
@@ -88,6 +88,10 @@ export const SWITCH_HISTORY_DROP_THRESHOLD = 0.075;
 export const ABANDON_DURATION_MULTIPLIER = 1.8;
 export const ABANDON_MIN_DOWNLOAD_MS = 500;
 export const ABANDON_MIN_SAMPLES = 6;
+// After an abandon (controllers/AbrController.js `_onSegmentDownloadShouldBeAbandoned`): the switch history is reset,
+// quality changes to the rule's pick, and for `abandonLoadTimeout` only down-switches are applied
+// (`checkPlaybackQuality`) while ThroughputRule asks for nothing (it requires ALLOW_LOAD).
+export const ABANDON_LOAD_TIMEOUT_S = 10;
 // ponytail: dash.js counts XHR progress events (~every 50 ms in browsers); the model counts RTT rounds instead.
 // Swap for a 50 ms trace clock if abandon timing on long-RTT paths ever matters.
 

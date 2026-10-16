@@ -36,7 +36,19 @@ Plano: [plan.md](plan.md). TDD em `src/sim/stream/`. Validação no browser só 
   - Testes: a cwnd dobra por RTT no slow start; uma perda corta para 0,7; a banda limita a entrega; a ociosidade > RTO reinicia a cwnd; mesma seed → mesmas perdas; banda de 0,05 Mbps com 5 % de perda termina
   - Verificar: `npm test -- stream/tcp stream/profiles`
   - Arquivos: `src/sim/stream/{profiles,tcp}.ts`, `tests/stream/{profiles,tcp}.test.ts`
-- [ ] **T10.2 ABR dash.js Dynamic**
+- [x] **T10.2 ABR dash.js Dynamic** (2026-10-16)
+  - Feito:
+    - `ewma.ts`: `addSample` e `estimate` da EWMA do dash.js.
+    - `abr.ts`: `decide()`, `updateDynamic()`, `onSegmentLoaded()`, `onBufferEmpty()`, `shouldAbandon()`, `onAbandon()`, `optimalFor()` e `minBufferLevelFor()`. São funções puras sobre um `AbrState` imutável, e o motor (T10.3) chama os `on*` na ordem dos eventos do dash.js.
+    - 34 testes novos; `abr.ts` com 100 % de linhas e 91 % de ramos.
+  - Mudança: **a decisão devolve um `Reason` estruturado** (regra, throughput seguro, teto, buffer, placeholder, fase do BOLA), não texto pt-BR. O texto fica no `lib/describe` (T10.7), como no resto do núcleo.
+  - Detalhes do código-fonte que o mockup não tinha:
+    - O BOLA nasce na 1ª consulta, em "startup" (escolhe pelo throughput e ajusta o placeholder). Passa a "steady" na decisão seguinte a um segmento carregado com buffer ≥ a duração dele.
+    - No steady, o BOLA soma ao placeholder o tempo parado desde o último download, aplica o BOLA-O e pode pedir **espera** ao agendador (`delayS`), gastando o placeholder antes.
+    - A cada segmento, o placeholder decai × 0,99 e é cortado ao máximo da qualidade atual. O buffer vazio zera o placeholder.
+    - Sem medição e com o buffer vazio, nenhuma regra pede troca: fica na qualidade inicial (1.000 kbps → 240p).
+    - Depois de um abandono: o histórico de trocas é zerado e, por 10 s (`abandonLoadTimeout`), só valem descidas e a ThroughputRule fica quieta.
+  - Pendente para a T10.3: os `traces` de progresso do abandono contam rodadas de RTT, não eventos de XHR (`ponytail:` no `dashjs.ts`).
   - Aceite: `abr.ts` exporta `throughputRule`, `bolaRule` (estados startup/steady, placeholder, BOLA-O), `insufficientBufferRule`, `switchHistoryRule` (janela de 8) e `decide(state, inputs) → { rendition, rule, why }`, que aplica a troca Dynamic e pega o **mínimo** entre as regras ativas (como o `getMinSwitchRequest`). Também exporta `shouldAbandon(download, inputs)` (AbandonRequestsRule). O throughput vem de uma EWMA (`ewma.ts`, meias-vidas de 3 s e 8 s). O `why` é o texto pt-BR do log ("Throughput: média 3,1 Mbps × 0,9 = 2,8 Mbps → 720p" / "BOLA: buffer 9,4 s → 1080p"); o 1º segmento, sem medição, sai na menor qualidade
   - Testes: casos com as mesmas entradas e saídas do dash.js (tirados do código ou dos testes dele) para cada regra; a troca Dynamic respeita a histerese nos dois sentidos; o mínimo entre as regras; o abandono acontece no máximo uma vez por segmento e nunca na menor qualidade
   - Verificar: `npm test -- stream/abr`
