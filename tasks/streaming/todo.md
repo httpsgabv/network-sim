@@ -98,7 +98,16 @@ Plano: [plan.md](plan.md). TDD em `src/sim/stream/`. Validação no browser só 
 
 ## Fatia (b) — interface do mockup v9 sobre o núcleo
 
-- [ ] **T10.4 Store: modo, perfil, plano e relógio em segundos**
+- [x] **T10.4 Store: modo, perfil, plano e relógio em segundos** (2026-10-16)
+  - Feito:
+    - `store.ts`: `mode`, `setMode` (zera `t`; abre a aba Gráfico no Streaming e Eventos na Transferência), `profile` (padrão `drop`), `streamLoss` (`STREAM_LOSSES` = 0 / 0,5 / 1 / 5 %), `streamPlan`, `streamSeg`, `setProfile`, `setStreamLoss`, `selectSeg`.
+    - `streamPlanFor(origem, destino, perfil, perda, mss)` calcula a borda e os dois RTTs pelas rotas memoizadas. A `Panel` ganhou `chart` e `segment`.
+    - `edgeOf` em `data/network.ts`; `LAST_MILE_RTT_S` = 10 ms em `sim/stream/engine.ts`.
+    - `useStreamSnapshot` / `streamSnapshotOf` em `lib/useSim.ts`.
+    - `tests/streamStore.test.ts` (9 testes).
+  - Mudança: em vez de um `ticksPerSecond(mode)` no `useClock`, o próprio `tick` do store lê o modo, junto com `toggle`, `stepNext` e `scrub` (fim e limites das etapas). O `useClock` ficou igual
+  - O MTU na Transferência continua valendo só para o próximo envio. No Streaming ele é o MSS, então refaz o plano e zera `t`
+  - O plano de stream é refeito em toda troca de rota ou MTU, mesmo na Transferência: custa ~2,4 ms
   - Aceite:
     - `store` ganha `mode`, `profile`, `streamLoss`, `streamPlan`, `streamSeg` e `setMode`/`setProfile`/`setStreamLoss`; trocar qualquer um deles, a rota ou o MTU refaz o plano e zera `t`.
     - `useClock` avança `t` com `ticksPerSecond(mode)`.

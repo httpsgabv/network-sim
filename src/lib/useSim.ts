@@ -1,5 +1,7 @@
 import { useEffect } from 'react';
 import { snapshot, type Plan, type Snapshot } from '../sim/engine';
+import { streamSnapshot } from '../sim/stream/engine';
+import type { StreamPlan, StreamSnapshot } from '../sim/stream/types';
 import { useSim } from '../store';
 
 /** Drives the simulation clock with requestAnimationFrame (which also idles in hidden tabs). */
@@ -28,4 +30,18 @@ export function useSnapshot() {
   const t = useSim((s) => s.t);
   const plan = useSim((s) => s.plan);
   return snapshotOf(plan, t);
+}
+
+let streamCached: { plan: StreamPlan; t: number; snap: StreamSnapshot } | null = null;
+
+/** Same sharing for Streaming: one snapshot per (stream plan, t). */
+export function streamSnapshotOf(plan: StreamPlan, t: number): StreamSnapshot {
+  if (streamCached?.plan !== plan || streamCached.t !== t) streamCached = { plan, t, snap: streamSnapshot(plan, t) };
+  return streamCached.snap;
+}
+
+export function useStreamSnapshot() {
+  const t = useSim((s) => s.t);
+  const plan = useSim((s) => s.streamPlan);
+  return streamSnapshotOf(plan, t);
 }

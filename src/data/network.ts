@@ -3,6 +3,7 @@
 import { CABLE_DATA } from './cableData';
 import { BACKBONES, backhaul, type Cable } from './cables';
 import { NODES, type NetNode } from './nodes';
+import { angle, toVec } from '../sim/geo';
 
 const LANDINGS: NetNode[] = Object.entries(CABLE_DATA.landings).map(([id, l]) => ({ id, name: l.name, kind: 'landing', at: l.at }));
 
@@ -24,3 +25,17 @@ export const nodeName = (id: string) => {
   const n = nodeById.get(id);
   return !n ? id : n.kind === 'landing' ? n.name.replace(/, [^,]+$/, '') : n.name;
 };
+
+/**
+ * The CDN edge that serves the viewer: the pickable city closest to them, other than the two ends (spec streaming.md,
+ * Decision 2). ponytail: real CDNs have an edge in the viewer's own city; ours only has the 15 pickable cities.
+ */
+export function edgeOf(origin: string, destination: string): string {
+  const at = toVec(nodeById.get(destination)!.at);
+  let best: NetNode | null = null;
+  for (const c of NODES) {
+    if (c.id === origin || c.id === destination) continue;
+    if (!best || angle(toVec(c.at), at) < angle(toVec(best.at), at)) best = c;
+  }
+  return best!.id;
+}

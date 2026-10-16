@@ -12,6 +12,8 @@ import { STREAM_STAGES, type Attempt, type Sample, type StreamConfig, type Strea
 /** The encode stage is a fixed slot on the clock; the real encode runs off-clock (plan.md). */
 export const ENCODE_S = 2;
 export const SAMPLE_S = 0.1;
+/** Kenji's access network adds this to the cable round trip (home Wi-Fi / mobile to the ISP). */
+export const LAST_MILE_RTT_S = 0.01;
 /** Playback integration step. */
 const STEP_S = 0.01;
 /** dash.js `scheduling.defaultTimeout`: how often the scheduler re-checks a full buffer. */
